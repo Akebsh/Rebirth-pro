@@ -117,7 +117,7 @@ export class CardMovement {
       case "deck":
         card.zone = "deck";
         deck_store.set(
-          position === "top" ? [card, ...current_deck] : [...current_deck, card]
+          position === "top" ? [...current_deck, card] : [card, ...current_deck]
         );
         break;
       case "hand":
