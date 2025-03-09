@@ -91,12 +91,13 @@ export class CardMovement {
     card: Card,
     from_zone: string,
     target_zone: string,
-    position: "top" | "bottom" = "bottom"
+    position: "top" | "bottom" = "bottom" // 기본값: bottom
   ): void {
     const current_deck = get(deck_store);
     const current_hand = get(hand_store);
     const current_entry = get(entry_store);
 
+    // 기존 위치에서 카드 제거
     switch (from_zone) {
       case "deck":
         deck_store.set(current_deck.filter((c) => c !== card));
@@ -111,14 +112,13 @@ export class CardMovement {
         break;
     }
 
+    // 목표 위치로 카드 이동 (덱 위 or 덱 아래)
     switch (target_zone) {
       case "deck":
         card.zone = "deck";
-        if (position === "top") {
-          deck_store.set([card, ...current_deck]); // 맨 위에 추가
-        } else {
-          deck_store.set([...current_deck, card]); // 맨 밑에 추가
-        }
+        deck_store.set(
+          position === "top" ? [card, ...current_deck] : [...current_deck, card]
+        );
         break;
       case "hand":
         card.zone = "hand";
@@ -131,6 +131,7 @@ export class CardMovement {
       default:
         break;
     }
+
     card.state.is_selected = false;
   }
 }
