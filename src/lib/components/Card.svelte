@@ -19,7 +19,7 @@
         card_data.state.is_selected = true;
 
         if (card_data.zone === "hand") {
-            card_actions = ["1", "2", "3"];
+            card_actions = ["1", "2", "3" , "7"];
         } else if (card_data.zone === "entry") {
             card_actions = ["4", "5", "6"];
         }
@@ -61,7 +61,7 @@
 
     selected_card.set(null);
     card_actions = [];
-    
+
         console.log(action);
         console.log("액션 클릭");
     }

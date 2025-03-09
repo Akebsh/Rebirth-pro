@@ -92,10 +92,20 @@ export class CardMovement {
     from_zone: string,
     target_zone: string,
     position: "top" | "bottom" = "bottom" // 기본값: bottom
-  ): void {
+  ): boolean {
     const current_deck = get(deck_store);
     const current_hand = get(hand_store);
     const current_entry = get(entry_store);
+
+    if (target_zone === "entry" && current_entry.length > 0) {
+      // entry 영역에 이미 카드가 있으면 이동 불가
+      return false;
+    }
+
+    if (target_zone === "retire" && current_deck.length >= 7) {
+      // 예: retire의 최대 카드 수를 7으로 제한
+      return false;
+    }
 
     // 기존 위치에서 카드 제거
     switch (from_zone) {
@@ -133,5 +143,6 @@ export class CardMovement {
     }
 
     card.state.is_selected = false;
+    return true;
   }
 }
