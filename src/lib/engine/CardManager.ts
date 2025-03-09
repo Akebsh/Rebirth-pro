@@ -112,7 +112,7 @@ export class CardMovement {
         break;
     }
 
-    // 목표 위치로 카드 이동 (덱 위 or 덱 아래)
+    // 목표 위치로 카드 이동 (덱 위 or 덱 아래) 수정
     switch (target_zone) {
       case "deck":
         card.zone = "deck";

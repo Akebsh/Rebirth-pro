@@ -33,19 +33,19 @@
 
     switch (action) {
         case "1":
-            console.log("1번 기능 실행! (핸드 → 덱 위)"); // 나중에 정말로 덱 위가 맞는지 드로우로 확인
+            console.log(" (핸드 → 덱 위)"); // 나중에 정말로 덱 위가 맞는지 드로우로 확인
             CardMovement.moveCard(card, "hand", "deck", "top");
             break;
         case "2":
-            console.log("1번 기능 실행! (핸드 → 덱 밑)");
+            console.log(" (핸드 → 덱 밑)");
             CardMovement.moveCard(card, "hand", "deck");
             break;
         case "4":
-            console.log("1번 기능 실행! (엔트리 → 덱 위)"); // 나중에 정말로 덱 위가 맞는지 드로우로 확인
+            console.log(" (엔트리 → 덱 위)"); // 나중에 정말로 덱 위가 맞는지 드로우로 확인
             CardMovement.moveCard(card, "entry", "deck", "top");
             break;
         case "5":
-            console.log("1번 기능 실행! (엔트리 → 덱 밑)");
+            console.log(" (엔트리 → 덱 밑)");
             CardMovement.moveCard(card, "entry", "deck");
             break;
 
