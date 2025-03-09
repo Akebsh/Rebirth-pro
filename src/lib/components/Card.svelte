@@ -40,6 +40,10 @@
             console.log(" (핸드 → 덱 밑)");
             CardMovement.moveCard(card, "hand", "deck");
             break;
+         case "3":
+            console.log(" (핸드 → 엔트리)");
+            CardMovement.moveCard(card, "hand", "entry");
+            break;
         case "4":
             console.log(" (엔트리 → 덱 위)"); 
             CardMovement.moveCard(card, "entry", "deck", "top");
@@ -54,6 +58,10 @@
             console.log("알 수 없는 액션");
             break;
     }
+
+    selected_card.set(null);
+    card_actions = [];
+    
         console.log(action);
         console.log("액션 클릭");
     }
