@@ -19,9 +19,9 @@
         card_data.state.is_selected = true;
 
         if (card_data.zone === "hand") {
-            card_actions = ["1", "2", "3" , "7"];
+            card_actions = ["1", "2", "3" ,"4", "5", "6", "7" ,"8"];
         } else if (card_data.zone === "entry") {
-            card_actions = ["4", "5", "6"];
+            card_actions = ["9", "10", "11"];
         }
 
     }
@@ -44,11 +44,12 @@
             console.log(" (핸드 → 엔트리)");
             CardMovement.moveCard(card, "hand", "entry");
             break;
-        case "4":
+            
+        case "9":
             console.log(" (엔트리 → 덱 위)"); 
             CardMovement.moveCard(card, "entry", "deck", "top");
             break;
-        case "5":
+        case "10":
             console.log(" (엔트리 → 덱 밑)");
             CardMovement.moveCard(card, "entry", "deck");
             break;
