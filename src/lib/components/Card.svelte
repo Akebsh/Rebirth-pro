@@ -88,33 +88,55 @@
         top: 50%;
         left: 50%;
         transform: translate(-50%, -50%);
-        background-color: #fff;
-        width: 100px;
-        height: 100px;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
+        background-color: rgba(255, 255, 255, 0.9); /* 반투명 배경 */
+        width: 140px;
+        height: 140px;
+        display: grid;
+        grid-template-columns: repeat(3, 1fr); /* 3x3 정사각형 배치 */
+        grid-template-rows: repeat(3, 1fr);
+        justify-items: center;
         align-items: center;
-        font-weight: bold;
         border: 2px solid #000;
+        border-radius: 10px;
         padding: 5px;
-        z-index: 10;
+        z-index: 100;
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(0.8);
+        transition: opacity 0.2s ease-out, transform 0.2s ease-out;
+    }
+
+    /* 선택된 상태일 때만 보이도록 설정 */
+    .action-menu.show {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+        pointer-events: auto;
     }
 
     .action-menu-btn {
-        display: block;
-        margin: 2.5px 0;
-        padding: 8px 12px;
-        width: 100%;
+        width: 40px;
+        height: 40px;
         background-color: #427cd8;
         border: none;
         color: white;
-        font-size: 10px;
+        font-size: 12px;
+        font-weight: bold;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        border-radius: 6px;
         cursor: pointer;
+        transition: all 0.2s ease-in-out;
+        box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3);
     }
 
     .action-menu-btn:hover {
         background-color: #1837d4;
+        transform: scale(1.1);
+    }
+
+    .action-menu-btn:active {
+        transform: scale(0.9);
+        box-shadow: none;
     }
 
     .selected {
@@ -158,7 +180,7 @@
 
     {#if card_data.state.is_selected}
         <div class="action-menu">
-            {#each card_actions as action}
+            {#each card_actions as action, i}
                 <button class="action-menu-btn" 
                 on:click={(event) => { event.stopPropagation(); actionClicked(action); }}>
                 {action}
