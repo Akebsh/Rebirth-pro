@@ -23,13 +23,46 @@
         } else if (card_data.zone === "entry") {
             card_actions = ["9", "10", "11"];
         }
-
+        showMemberSubmenu = false;
     }
+
+
+    let showMemberSubmenu: boolean = false;
+
 
     function actionClicked(action: string) {
 
         const card = get(selected_card);
     if (!card) return; // 선택된 카드가 없으면 실행 안 함
+
+
+
+
+
+
+// 멤버 서브메뉴 표시 토글
+if (action === "4") {
+    console.log("멤버 버튼 발동시?")
+        showMemberSubmenu = !showMemberSubmenu;
+        return; // 다른 액션은 실행하지 않음
+    }
+    
+    // 멤버 위치 선택 처리
+    if (action === "member1" || action === "member2" || action === "member3") {
+        const memberIndex = parseInt(action.replace("member", "")) - 1;
+        console.log(`멤버 ${memberIndex + 1}로 이동`);
+        CardMovement.moveCard(card, card.zone, "member", undefined, memberIndex);
+        
+        // 액션 완료 후 상태 초기화
+        selected_card.set(null);
+        card_actions = [];
+        showMemberSubmenu = false;
+        return;
+    }
+
+
+
+
 
     switch (action) {
         case "1":
@@ -44,7 +77,7 @@
             console.log(" (핸드 → 엔트리)");
             CardMovement.moveCard(card, "hand", "entry");
             break;
-            
+
         case "9":
             console.log(" (엔트리 → 덱 위)"); 
             CardMovement.moveCard(card, "entry", "deck", "top");
@@ -62,6 +95,7 @@
 
     selected_card.set(null);
     card_actions = [];
+    showMemberSubmenu = false;
 
         console.log(action);
         console.log("액션 클릭");
@@ -140,6 +174,47 @@
         box-shadow: none;
     }
 
+
+  /* 멤버 서브메뉴 스타일 */
+  .member-submenu {
+        position: absolute;
+        top: -10px; /* 카드 위쪽에 표시 */
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        gap: 5px;
+        justify-items: center;
+        align-items: center;
+        border: 2px solid #000;
+        border-radius: 10px;
+        padding: 5px;
+        background-color: rgba(255, 255, 255, 0.9); /* 반투명 배경 */
+        z-index: 300;
+        opacity: 1;
+        visibility: visible;
+    }
+    
+    .member-btn {
+        width: 30px;
+        height: 30px;
+        background-color: #427cd8;
+        border: none;
+        color: white;
+        font-size: 12px;
+        cursor: pointer;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        border-radius: 4px;
+    }
+    
+    .member-btn:hover {
+        background-color: #1837d4;
+    }
+
+
+
+
     .selected {
         outline: 3px solid #ffcc00;
         box-shadow: 0 0 10px rgba(255, 204, 0, 0.8);
@@ -160,6 +235,10 @@
         transform: translateY(0);
         transition: opacity 0.5s ease-out, transform 0.5s ease-out;
     }
+
+
+
+
 
 
 </style>
@@ -188,5 +267,24 @@
                 </button>
             {/each}
         </div>
+
+        {#if showMemberSubmenu}
+        <div class="member-submenu">
+            <button class="member-btn" 
+                on:click={(event) => { event.stopPropagation(); actionClicked("member1"); }}>
+                left
+            </button>
+            <button class="member-btn" 
+                on:click={(event) => { event.stopPropagation(); actionClicked("member2"); }}>
+                center
+            </button>
+            <button class="member-btn" 
+                on:click={(event) => { event.stopPropagation(); actionClicked("member3"); }}>
+                right
+            </button>
+        </div>
+        {/if}
+
+
     {/if}
 </div>
