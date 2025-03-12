@@ -4,6 +4,7 @@
     import EntryZone from "$lib/components/EntryZone.svelte";
     import MemberZone from "$lib/components/MemberZone.svelte";
     import HandZone from "$lib/components/HandZone.svelte";
+    import WaitingZone from "$lib/components/WaitingZone.svelte";
     import PhaseCounter from "$lib/components/PhaseCounter.svelte";
     import { gameStart, game_playing, gameSetting, automaticPhaseProgress } from "$lib/engine/GameManager";
 
@@ -11,6 +12,7 @@
 
 <PhaseCounter/>
 <EntryZone/>
+<WaitingZone/>
 <MemberZone/>
 <HandZone/>
 <hr>

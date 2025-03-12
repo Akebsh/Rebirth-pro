@@ -1,5 +1,11 @@
 import { get } from "svelte/store";
-import { deck_store, hand_store, entry_store, member_store } from "./CardStore";
+import {
+  deck_store,
+  hand_store,
+  entry_store,
+  member_store,
+  waiting_store,
+} from "./CardStore";
 
 export interface Card {
   serial_number: string;
@@ -97,9 +103,9 @@ export class CardMovement {
     const current_hand = get(hand_store);
     const current_entry = get(entry_store);
     const current_member = get(member_store);
+    const current_waiting = get(waiting_store);
 
     if (target_zone === "entry" && current_entry.length > 0) {
-      // entry 영역에 이미 카드가 있으면 이동 불가
       return false;
     }
 
@@ -139,6 +145,9 @@ export class CardMovement {
       case "entry":
         entry_store.set(current_entry.filter((c) => c !== card));
         break;
+      case "waiting":
+        waiting_store.set(current_waiting.filter((c) => c !== card));
+        break;
       case "member1":
       case "member2":
       case "member3":
@@ -163,6 +172,10 @@ export class CardMovement {
       case "entry":
         card.zone = "entry";
         entry_store.set([...current_entry, card]);
+        break;
+      case "waiting":
+        card.zone = "waiting";
+        waiting_store.set([...current_waiting, card]);
         break;
       case "member1":
         card.zone = "member1";

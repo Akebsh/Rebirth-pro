@@ -86,6 +86,10 @@ if (action === "4") {
             console.log(" (핸드 → 엔트리)");
             CardMovement.moveCard(card, "hand", "entry");
             break;
+        case "5":
+            console.log(" (핸드 → 웨이팅)");
+            CardMovement.moveCard(card, "hand", "waiting");
+            break;
 
         case "9":
             console.log(" (엔트리 → 덱 위)"); 
