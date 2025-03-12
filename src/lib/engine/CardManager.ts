@@ -1,5 +1,5 @@
 import { get } from "svelte/store";
-import { deck_store, hand_store, entry_store } from "./CardStore";
+import { deck_store, hand_store, entry_store, member_store } from "./CardStore";
 
 export interface Card {
   serial_number: string;
@@ -14,9 +14,9 @@ export interface Card {
     | "deck"
     | "hand"
     | "entry"
-    | "member-1"
-    | "member-2"
-    | "member-3"
+    | "member1"
+    | "member2"
+    | "member3"
     | "waiting"
     | "retire"
     | "re-birth"
@@ -96,13 +96,34 @@ export class CardMovement {
     const current_deck = get(deck_store);
     const current_hand = get(hand_store);
     const current_entry = get(entry_store);
+    const current_member = get(member_store);
 
     if (target_zone === "entry" && current_entry.length > 0) {
       // entry 영역에 이미 카드가 있으면 이동 불가
       return false;
     }
 
-    if (target_zone === "retire" && current_deck.length >= 7) {
+    // 각 멤버 슬롯에 대한 체크
+    if (
+      target_zone === "member1" &&
+      current_member.some((c) => c.zone === "member1")
+    ) {
+      return false;
+    }
+    if (
+      target_zone === "member2" &&
+      current_member.some((c) => c.zone === "member2")
+    ) {
+      return false;
+    }
+    if (
+      target_zone === "member3" &&
+      current_member.some((c) => c.zone === "member3")
+    ) {
+      return false;
+    }
+
+    if (target_zone === "retire" && current_deck.length >= 6) {
       // 예: retire의 최대 카드 수를 7으로 제한
       return false;
     }
@@ -117,6 +138,11 @@ export class CardMovement {
         break;
       case "entry":
         entry_store.set(current_entry.filter((c) => c !== card));
+        break;
+      case "member1":
+      case "member2":
+      case "member3":
+        member_store.set(current_member.filter((c) => c !== card));
         break;
       default:
         break;
@@ -137,6 +163,18 @@ export class CardMovement {
       case "entry":
         card.zone = "entry";
         entry_store.set([...current_entry, card]);
+        break;
+      case "member1":
+        card.zone = "member1";
+        member_store.set([...current_member, card]);
+        break;
+      case "member2":
+        card.zone = "member2";
+        member_store.set([...current_member, card]);
+        break;
+      case "member3":
+        card.zone = "member3";
+        member_store.set([...current_member, card]);
         break;
       default:
         break;

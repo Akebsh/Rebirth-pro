@@ -1,6 +1,8 @@
 <script lang="ts">
     import { entry_store } from "$lib/engine/CardStore";
     import Card from "./Card.svelte";
+
+    $: entry_card = $entry_store[0];
 </script>
 
 <style>
@@ -18,20 +20,32 @@
 
     .entry-container {
         display: flex;
-        flex-wrap: wrap;
         justify-content: center;
-        gap: 10px;
         margin-top: 10px;
+    }
+
+    .entry-slot {
+        width: 126px;
+        height: 176px;
+        border: 2px dashed #666;
+        border-radius: 9px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .entry-slot:empty {
+        background: rgba(255, 255, 255, 0.1);
     }
 </style>
 
 <div class="entry">
     <h3>Entry</h3>
     <div class="entry-container">
-        {#if $entry_store.length > 0}
-            {#each $entry_store as card }
-                <Card card_data={card}></Card>
-            {/each}
-        {/if}
+        <div class="entry-slot">
+            {#if entry_card}
+                <Card card_data={entry_card} />
+            {/if}
+        </div>
     </div>
 </div>

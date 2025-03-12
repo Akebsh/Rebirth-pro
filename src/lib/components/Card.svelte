@@ -47,15 +47,24 @@ if (action === "4") {
         return; // 다른 액션은 실행하지 않음
     }
     
-    // 멤버 위치 선택 처리
-    if (action === "member1" || action === "member2" || action === "member3") {
-        const memberIndex = parseInt(action.replace("member", "")) - 1;
-        console.log(`멤버 ${memberIndex + 1}로 이동`);
-        CardMovement.moveCard(card, card.zone, "member", undefined, memberIndex);
-        
-        // 액션 완료 후 상태 초기화
+    if (action === "member1") {
+        CardMovement.moveCard(card, card.zone, "member1");
+        console.log("멤버 1로 이동");
         selected_card.set(null);
-        card_actions = [];
+        showMemberSubmenu = false;
+        return;
+    }
+    if (action === "member2") {
+        CardMovement.moveCard(card, card.zone, "member2");
+        console.log("멤버 2로 이동");
+        selected_card.set(null);
+        showMemberSubmenu = false;
+        return;
+    }
+    if (action === "member3") {
+        CardMovement.moveCard(card, card.zone, "member3");
+        console.log("멤버 3로 이동");
+        selected_card.set(null);
         showMemberSubmenu = false;
         return;
     }
@@ -138,13 +147,6 @@ if (action === "4") {
         opacity: 1;
         transform: translate(-50%, -50%) scale(0.8);
         transition: opacity 0.2s ease-out, transform 0.2s ease-out;
-    }
-
-    /* 선택된 상태일 때만 보이도록 설정 */
-    .action-menu.show {
-        opacity: 1;
-        transform: translate(-50%, -50%) scale(1);
-        pointer-events: auto;
     }
 
     .action-menu-btn {
