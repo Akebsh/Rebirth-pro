@@ -5,6 +5,8 @@ import {
   entry_store,
   member_store,
   waiting_store,
+  energy_store,
+  partner_store,
 } from "./CardStore";
 
 export interface Card {
@@ -104,6 +106,7 @@ export class CardMovement {
     const current_entry = get(entry_store);
     const current_member = get(member_store);
     const current_waiting = get(waiting_store);
+    const current_partner = get(partner_store);
 
     if (target_zone === "entry" && current_entry.length > 0) {
       return false;
@@ -129,8 +132,7 @@ export class CardMovement {
       return false;
     }
 
-    if (target_zone === "retire" && current_deck.length >= 6) {
-      // 예: retire의 최대 카드 수를 7으로 제한
+    if (target_zone === "partner" && current_partner.length >= 3) {
       return false;
     }
 
@@ -152,6 +154,12 @@ export class CardMovement {
       case "member2":
       case "member3":
         member_store.set(current_member.filter((c) => c !== card));
+        break;
+      case "partner":
+        partner_store.update((cards) => cards.filter((c) => c !== card));
+        break;
+      case "energy":
+        energy_store.update((cards) => cards.filter((c) => c !== card));
         break;
       default:
         break;
@@ -188,6 +196,14 @@ export class CardMovement {
       case "member3":
         card.zone = "member3";
         member_store.set([...current_member, card]);
+        break;
+      case "energy":
+        card.zone = "energy";
+        energy_store.update((cards) => [...cards, card]);
+        break;
+      case "partner":
+        card.zone = "partner";
+        partner_store.update((cards) => [...cards, card]);
         break;
       default:
         break;

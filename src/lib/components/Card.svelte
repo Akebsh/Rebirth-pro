@@ -6,6 +6,8 @@
     
     export let card_data: Card;
     let card_actions = Array<string>();
+    let showMemberSubmenu: boolean = false;
+    let showDeckSubmenu: boolean = false;
 
     $: card_data.state.is_selected = $selected_card === card_data;
 
@@ -24,94 +26,115 @@
             card_actions = ["9", "10", "11"];
         }
         showMemberSubmenu = false;
+        showDeckSubmenu = false;
     }
-
-
-    let showMemberSubmenu: boolean = false;
-
 
     function actionClicked(action: string) {
-
         const card = get(selected_card);
-    if (!card) return; // 선택된 카드가 없으면 실행 안 함
+        if (!card) return;
 
+        // 덱 서브메뉴 표시 토글
+        if (action === "1" || action === "9") {
+            console.log("덱 버튼 발동");
+            showDeckSubmenu = !showDeckSubmenu;
+            showMemberSubmenu = false;
+            return;
+        }
 
+        // 엔트리로 이동
+        if (action === "2") {
+            console.log(` (${card.zone} → 엔트리)`);
+            CardMovement.moveCard(card, card.zone, "entry");
+            selected_card.set(null);
+            card_actions = [];
+            return;
+        }
 
+        // 웨이팅으로 이동
+        if (action === "3") {
+            console.log(` (${card.zone} → 웨이팅)`);
+            CardMovement.moveCard(card, card.zone, "waiting");
+            selected_card.set(null);
+            card_actions = [];
+            return;
+        }
 
+        // 멤버 서브메뉴 표시 토글
+        if (action === "4") {
+            console.log("멤버 버튼 발동");
+            showMemberSubmenu = !showMemberSubmenu;
+            showDeckSubmenu = false;
+            return;
+        }
 
+        // 에너지로 이동
+        if (action === "5") {
+            console.log(` (${card.zone} → 에너지)`);
+            card.state.is_flipped = true;  // 카드를 뒷면으로 뒤집기
+            CardMovement.moveCard(card, card.zone, "energy");
+            selected_card.set(null);
+            card_actions = [];
+            return;
+        }
 
-// 멤버 서브메뉴 표시 토글
-if (action === "4") {
-    console.log("멤버 버튼 발동시?")
-        showMemberSubmenu = !showMemberSubmenu;
-        return; // 다른 액션은 실행하지 않음
-    }
-    
-    if (action === "member1") {
-        CardMovement.moveCard(card, card.zone, "member1");
-        console.log("멤버 1로 이동");
-        selected_card.set(null);
-        showMemberSubmenu = false;
-        return;
-    }
-    if (action === "member2") {
-        CardMovement.moveCard(card, card.zone, "member2");
-        console.log("멤버 2로 이동");
-        selected_card.set(null);
-        showMemberSubmenu = false;
-        return;
-    }
-    if (action === "member3") {
-        CardMovement.moveCard(card, card.zone, "member3");
-        console.log("멤버 3로 이동");
-        selected_card.set(null);
-        showMemberSubmenu = false;
-        return;
-    }
+        // 파트너로 이동
+        if (action === "6") {
+            console.log(` (${card.zone} → 파트너)`);
+            CardMovement.moveCard(card, card.zone, "partner");
+            selected_card.set(null);
+            card_actions = [];
+            return;
+        }
 
+        // 덱 위치 선택 처리
+        if (action === "deck_top") {
+            console.log(` (${card.zone} → 덱 위)`);
+            CardMovement.moveCard(card, card.zone, "deck", "top");
+            selected_card.set(null);
+            showDeckSubmenu = false;
+            return;
+        }
+        if (action === "deck_bottom") {
+            console.log(` (${card.zone} → 덱 밑)`);
+            CardMovement.moveCard(card, card.zone, "deck");
+            selected_card.set(null);
+            showDeckSubmenu = false;
+            return;
+        }
+        
+        // 멤버 위치 선택 처리
+        if (action === "member1") {
+            CardMovement.moveCard(card, card.zone, "member1");
+            console.log("멤버 1로 이동");
+            selected_card.set(null);
+            showMemberSubmenu = false;
+            return;
+        }
+        if (action === "member2") {
+            CardMovement.moveCard(card, card.zone, "member2");
+            console.log("멤버 2로 이동");
+            selected_card.set(null);
+            showMemberSubmenu = false;
+            return;
+        }
+        if (action === "member3") {
+            CardMovement.moveCard(card, card.zone, "member3");
+            console.log("멤버 3로 이동");
+            selected_card.set(null);
+            showMemberSubmenu = false;
+            return;
+        }
 
-
-
-
-    switch (action) {
-        case "1":
-            console.log(" (핸드 → 덱 위)"); 
-            CardMovement.moveCard(card, "hand", "deck", "top");
-            break;
-        case "2":
-            console.log(" (핸드 → 덱 밑)");
-            CardMovement.moveCard(card, "hand", "deck");
-            break;
-         case "3":
-            console.log(" (핸드 → 엔트리)");
-            CardMovement.moveCard(card, "hand", "entry");
-            break;
-        case "5":
-            console.log(" (핸드 → 웨이팅)");
-            CardMovement.moveCard(card, "hand", "waiting");
-            break;
-
-        case "9":
-            console.log(" (엔트리 → 덱 위)"); 
-            CardMovement.moveCard(card, "entry", "deck", "top");
-            break;
-        case "10":
-            console.log(" (엔트리 → 덱 밑)");
-            CardMovement.moveCard(card, "entry", "deck");
-            break;
-
-
+        switch (action) {
             default:
-            console.log("알 수 없는 액션");
-            break;
-    }
+                console.log("알 수 없는 액션");
+                break;
+        }
 
-    selected_card.set(null);
-    card_actions = [];
-    showMemberSubmenu = false;
-
-        console.log(action);
-        console.log("액션 클릭");
+        selected_card.set(null);
+        card_actions = [];
+        showMemberSubmenu = false;
+        showDeckSubmenu = false;
     }
 </script>
 
@@ -218,8 +241,41 @@ if (action === "4") {
         background-color: #1837d4;
     }
 
-
-
+    .deck-submenu {
+        position: absolute;
+        top: -10px;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        gap: 5px;
+        justify-items: center;
+        align-items: center;
+        border: 2px solid #000;
+        border-radius: 10px;
+        padding: 5px;
+        background-color: rgba(255, 255, 255, 0.9);
+        z-index: 300;
+        opacity: 1;
+        visibility: visible;
+    }
+    
+    .deck-btn {
+        width: 60px;
+        height: 30px;
+        background-color: #427cd8;
+        border: none;
+        color: white;
+        font-size: 12px;
+        cursor: pointer;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        border-radius: 4px;
+    }
+    
+    .deck-btn:hover {
+        background-color: #1837d4;
+    }
 
     .selected {
         outline: 3px solid #ffcc00;
@@ -258,7 +314,7 @@ if (action === "4") {
     
     <div>
         {#if card_data.state.is_flipped}
-            <img src="" alt="back" />
+            <img src="/rebirthBack.png" alt="card back" />
         {:else}
             <img src={card_data.image_url} alt={card_data.serial_number} />
         {/if}
@@ -273,6 +329,19 @@ if (action === "4") {
                 </button>
             {/each}
         </div>
+
+        {#if showDeckSubmenu}
+        <div class="deck-submenu">
+            <button class="deck-btn" 
+                on:click={(event) => { event.stopPropagation(); actionClicked("deck_top"); }}>
+                덱 위로
+            </button>
+            <button class="deck-btn" 
+                on:click={(event) => { event.stopPropagation(); actionClicked("deck_bottom"); }}>
+                덱 밑으로
+            </button>
+        </div>
+        {/if}
 
         {#if showMemberSubmenu}
         <div class="member-submenu">
