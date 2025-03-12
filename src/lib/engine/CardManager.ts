@@ -7,6 +7,7 @@ import {
   waiting_store,
   energy_store,
   partner_store,
+  rebirth_store,
 } from "./CardStore";
 
 export interface Card {
@@ -37,6 +38,7 @@ export interface Card {
     is_fading_out: boolean;
     is_flipped: boolean;
     is_selected: boolean;
+    is_tapped: boolean;
   };
 }
 
@@ -58,6 +60,7 @@ export function createCard(data: Partial<Card>): Card {
       is_fading_out: false,
       is_flipped: false,
       is_selected: false,
+      is_tapped: false,
       ...data.state,
     },
   };
@@ -107,6 +110,7 @@ export class CardMovement {
     const current_member = get(member_store);
     const current_waiting = get(waiting_store);
     const current_partner = get(partner_store);
+    const current_rebirth = get(rebirth_store);
 
     if (target_zone === "entry" && current_entry.length > 0) {
       return false;
@@ -136,6 +140,10 @@ export class CardMovement {
       return false;
     }
 
+    if (target_zone === "re-birth" && current_rebirth.length > 0) {
+      return false;
+    }
+
     // 기존 위치에서 카드 제거
     switch (from_zone) {
       case "deck":
@@ -160,6 +168,9 @@ export class CardMovement {
         break;
       case "energy":
         energy_store.update((cards) => cards.filter((c) => c !== card));
+        break;
+      case "re-birth":
+        rebirth_store.update((cards) => cards.filter((c) => c !== card));
         break;
       default:
         break;
@@ -204,6 +215,11 @@ export class CardMovement {
       case "partner":
         card.zone = "partner";
         partner_store.update((cards) => [...cards, card]);
+        break;
+      case "re-birth":
+        card.zone = "re-birth";
+        card.state.is_tapped = true;
+        rebirth_store.update((cards) => [...cards, card]);
         break;
       default:
         break;

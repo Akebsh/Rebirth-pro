@@ -86,6 +86,15 @@
             return;
         }
 
+        // 리버스로 이동
+        if (action === "7") {
+            console.log(` (${card.zone} → 리버스)`);
+            CardMovement.moveCard(card, card.zone, "re-birth");
+            selected_card.set(null);
+            card_actions = [];
+            return;
+        }
+
         // 덱 위치 선택 처리
         if (action === "deck_top") {
             console.log(` (${card.zone} → 덱 위)`);
@@ -147,6 +156,7 @@
         border-radius: 9px;
         perspective: 1000px;
         cursor: pointer;
+        transition: transform 0.3s ease;
     }
 
     img {
@@ -298,17 +308,16 @@
         transition: opacity 0.5s ease-out, transform 0.5s ease-out;
     }
 
-
-
-
-
-
+    .tapped {
+        transform: rotate(90deg);
+    }
 </style>
 
 <div class="card 
     {card_data.state.is_selected ? 'selected' : ''}
     {card_data.state.is_animating ? 'deck-fade-out' : ''}
-    {card_data.state.is_fading_in ? 'hand-fade-in' : 'hand-position'}"
+    {card_data.state.is_fading_in ? 'hand-fade-in' : 'hand-position'}
+    {card_data.state.is_tapped ? 'tapped' : ''}"
     on:click={isClicked}
     aria-hidden="true">
     

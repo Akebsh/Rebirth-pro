@@ -8,6 +8,7 @@
     import PhaseCounter from "$lib/components/PhaseCounter.svelte";
     import EnergyZone from "$lib/components/EnergyZone.svelte";
     import PartnerZone from "$lib/components/PartnerZone.svelte";
+    import RebirthZone from "$lib/components/RebirthZone.svelte";
     import { gameStart, game_playing, gameSetting, automaticPhaseProgress } from "$lib/engine/GameManager";
 </script>
 
@@ -29,6 +30,7 @@
     <WaitingZone/>
     <EnergyZone />
     <PartnerZone/>
+    <RebirthZone/>
 </div>
 {#if !$game_playing}
     <button on:click={gameSetting}>Game Setting</button>
