@@ -95,6 +95,17 @@
             return;
         }
 
+        // 리타이어로 이동
+        if (action === "8") {
+            console.log(` (${card.zone} → 리타이어)`);
+            CardMovement.moveCard(card, card.zone, "retire");
+            selected_card.set(null);
+            card_actions = [];
+            return;
+        }
+
+
+        
         // 덱 위치 선택 처리
         if (action === "deck_top") {
             console.log(` (${card.zone} → 덱 위)`);
@@ -234,7 +245,7 @@
     }
     
     .member-btn {
-        width: 30px;
+        width: 50px;
         height: 30px;
         background-color: #427cd8;
         border: none;

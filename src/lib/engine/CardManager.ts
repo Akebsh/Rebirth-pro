@@ -8,6 +8,7 @@ import {
   energy_store,
   partner_store,
   rebirth_store,
+  retire_store,
 } from "./CardStore";
 
 export interface Card {
@@ -111,6 +112,7 @@ export class CardMovement {
     const current_waiting = get(waiting_store);
     const current_partner = get(partner_store);
     const current_rebirth = get(rebirth_store);
+    const current_retire = get(retire_store);
 
     if (target_zone === "entry" && current_entry.length > 0) {
       return false;
@@ -172,6 +174,9 @@ export class CardMovement {
       case "re-birth":
         rebirth_store.update((cards) => cards.filter((c) => c !== card));
         break;
+      case "retire":
+        retire_store.update((cards) => cards.filter((c) => c !== card));
+        break;
       default:
         break;
     }
@@ -220,6 +225,11 @@ export class CardMovement {
         card.zone = "re-birth";
         card.state.is_tapped = true;
         rebirth_store.update((cards) => [...cards, card]);
+        break;
+      case "retire":
+        card.zone = "retire";
+        card.state.is_tapped = true;
+        retire_store.update((cards) => [...cards, card]);
         break;
       default:
         break;
