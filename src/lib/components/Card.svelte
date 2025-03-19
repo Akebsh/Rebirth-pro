@@ -21,10 +21,29 @@
         card_data.state.is_selected = true;
 
         if (card_data.zone === "hand") {
-            card_actions = ["1", "2", "3" ,"4", "5", "6", "7" ,"8"];
+            card_actions = ["덱", "엔트", "대기" ,"멤버", "에너", "파트", "리버" ,"리타"];
         } else if (card_data.zone === "entry") {
-            card_actions = ["9", "10", "11"];
+            card_actions = ["덱", "대기" ,"멤버", "에너", "파트", "리버" ,"리타"];
         }
+        else if (card_data.zone === "waiting") {
+            card_actions = ["덱", "엔트" ,"멤버", "에너", "파트", "리버" ,"리타"];
+        }
+        else if (card_data.zone === "member1" ||card_data.zone === "member2" ||card_data.zone === "member3"  ) {
+            card_actions = ["덱", "엔트", "대기" , "에너", "파트", "리버" ,"리타"];
+        }
+        else if (card_data.zone === "energy") {
+            card_actions = ["덱", "엔트", "대기" ,"멤버", "파트", "리버" ,"리타"];
+        }
+        else if (card_data.zone === "partner") {
+            card_actions = ["덱","엔트", "대기" ,"멤버", "에너", "리버" ,"리타"];
+        }
+        else if (card_data.zone === "re-birth") {
+            card_actions = ["덱", "엔트", "대기" ,"멤버", "에너", "파트","리타"];
+        }
+        else if (card_data.zone === "retire") {
+            card_actions = ["덱", "엔트", "대기" ,"멤버", "에너", "파트", "리버"];
+        }
+      
         showMemberSubmenu = false;
         showDeckSubmenu = false;
     }
@@ -34,7 +53,9 @@
         if (!card) return;
 
         // 덱 서브메뉴 표시 토글
-        if (action === "1" || action === "9") {
+        if (action === "덱" || action === "9") {
+            card.state.is_tapped = false;
+            card.state.is_flipped = false;
             console.log("덱 버튼 발동");
             showDeckSubmenu = !showDeckSubmenu;
             showMemberSubmenu = false;
@@ -42,7 +63,9 @@
         }
 
         // 엔트리로 이동
-        if (action === "2") {
+        if (action === "엔트") {
+            card.state.is_tapped = false;
+            card.state.is_flipped = false;
             console.log(` (${card.zone} → 엔트리)`);
             CardMovement.moveCard(card, card.zone, "entry");
             selected_card.set(null);
@@ -51,7 +74,9 @@
         }
 
         // 웨이팅으로 이동
-        if (action === "3") {
+        if (action === "대기") {
+            card.state.is_tapped = false;
+            card.state.is_flipped = false;
             console.log(` (${card.zone} → 웨이팅)`);
             CardMovement.moveCard(card, card.zone, "waiting");
             selected_card.set(null);
@@ -60,7 +85,9 @@
         }
 
         // 멤버 서브메뉴 표시 토글
-        if (action === "4") {
+        if (action === "멤버") {
+            card.state.is_tapped = false;
+            card.state.is_flipped = false;
             console.log("멤버 버튼 발동");
             showMemberSubmenu = !showMemberSubmenu;
             showDeckSubmenu = false;
@@ -68,7 +95,9 @@
         }
 
         // 에너지로 이동
-        if (action === "5") {
+        if (action === "에너") {
+            card.state.is_tapped = false;
+            card.state.is_flipped = false;
             console.log(` (${card.zone} → 에너지)`);
             card.state.is_flipped = true;  // 카드를 뒷면으로 뒤집기
             CardMovement.moveCard(card, card.zone, "energy");
@@ -78,7 +107,9 @@
         }
 
         // 파트너로 이동
-        if (action === "6") {
+        if (action === "파트") {
+            card.state.is_tapped = false;
+            card.state.is_flipped = false;
             console.log(` (${card.zone} → 파트너)`);
             CardMovement.moveCard(card, card.zone, "partner");
             selected_card.set(null);
@@ -87,7 +118,9 @@
         }
 
         // 리버스로 이동
-        if (action === "7") {
+        if (action === "리버") {
+            card.state.is_tapped = false;
+            card.state.is_flipped = false;
             console.log(` (${card.zone} → 리버스)`);
             CardMovement.moveCard(card, card.zone, "re-birth");
             selected_card.set(null);
@@ -96,7 +129,9 @@
         }
 
         // 리타이어로 이동
-        if (action === "8") {
+        if (action === "리타") {
+            card.state.is_tapped = false;
+            card.state.is_flipped = false;
             console.log(` (${card.zone} → 리타이어)`);
             CardMovement.moveCard(card, card.zone, "retire");
             selected_card.set(null);
@@ -105,7 +140,7 @@
         }
 
 
-        
+
         // 덱 위치 선택 처리
         if (action === "deck_top") {
             console.log(` (${card.zone} → 덱 위)`);
@@ -246,7 +281,7 @@
     
     .member-btn {
         width: 50px;
-        height: 30px;
+        height: 40px;
         background-color: #427cd8;
         border: none;
         color: white;
@@ -255,7 +290,7 @@
         display: flex;
         justify-content: center;
         align-items: center;
-        border-radius: 4px;
+        border-radius: 5px;
     }
     
     .member-btn:hover {
@@ -281,8 +316,8 @@
     }
     
     .deck-btn {
-        width: 60px;
-        height: 30px;
+        width: 70px;
+        height: 40px;
         background-color: #427cd8;
         border: none;
         color: white;
