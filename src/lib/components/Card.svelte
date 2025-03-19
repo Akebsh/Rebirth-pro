@@ -23,25 +23,25 @@
         if (card_data.zone === "hand") {
             card_actions = ["덱", "엔트", "대기" ,"멤버", "에너", "파트", "리버" ,"리타"];
         } else if (card_data.zone === "entry") {
-            card_actions = ["덱", "대기" ,"멤버", "에너", "파트", "리버" ,"리타"];
+            card_actions = ["덱", "대기" ,"멤버", "에너", "파트", "리버" ,"리타" ,"핸드"];
         }
         else if (card_data.zone === "waiting") {
-            card_actions = ["덱", "엔트" ,"멤버", "에너", "파트", "리버" ,"리타"];
+            card_actions = ["덱", "엔트" ,"멤버", "에너", "파트", "리버" ,"리타" ,"핸드"];
         }
         else if (card_data.zone === "member1" ||card_data.zone === "member2" ||card_data.zone === "member3"  ) {
-            card_actions = ["덱", "엔트", "대기" , "에너", "파트", "리버" ,"리타"];
+            card_actions = ["덱", "엔트", "대기" , "에너", "파트", "리버" ,"리타" ,"핸드"];
         }
         else if (card_data.zone === "energy") {
-            card_actions = ["덱", "엔트", "대기" ,"멤버", "파트", "리버" ,"리타"];
+            card_actions = ["덱", "엔트", "대기" ,"멤버", "파트", "리버" ,"리타" ,"핸드"];
         }
         else if (card_data.zone === "partner") {
-            card_actions = ["덱","엔트", "대기" ,"멤버", "에너", "리버" ,"리타"];
+            card_actions = ["덱","엔트", "대기" ,"멤버", "에너", "리버" ,"리타" ,"핸드"];
         }
         else if (card_data.zone === "re-birth") {
-            card_actions = ["덱", "엔트", "대기" ,"멤버", "에너", "파트","리타"];
+            card_actions = ["덱", "엔트", "대기" ,"멤버", "에너", "파트","리타" ,"핸드"];
         }
         else if (card_data.zone === "retire") {
-            card_actions = ["덱", "엔트", "대기" ,"멤버", "에너", "파트", "리버"];
+            card_actions = ["덱", "엔트", "대기" ,"멤버", "에너", "파트", "리버" ,"핸드"];
         }
       
         showMemberSubmenu = false;
@@ -134,6 +134,16 @@
             card.state.is_flipped = false;
             console.log(` (${card.zone} → 리타이어)`);
             CardMovement.moveCard(card, card.zone, "retire");
+            selected_card.set(null);
+            card_actions = [];
+            return;
+        }
+
+        if (action === "핸드") {
+            card.state.is_tapped = false;
+            card.state.is_flipped = false;
+            console.log(` (${card.zone} → 핸드)`);
+            CardMovement.moveCard(card, card.zone, "hand");
             selected_card.set(null);
             card_actions = [];
             return;
