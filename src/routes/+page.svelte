@@ -1,103 +1,45 @@
-<script>
-    // import Card from "$lib/components/Card.svelte";
-    import Deck from "$lib/components/Deck.svelte";
-    import EntryZone from "$lib/components/EntryZone.svelte";
-    import MemberZone from "$lib/components/MemberZone.svelte";
-    import HandZone from "$lib/components/HandZone.svelte";
-    import WaitingZone from "$lib/components/WaitingZone.svelte";
-    import PhaseCounter from "$lib/components/PhaseCounter.svelte";
-    import EnergyZone from "$lib/components/EnergyZone.svelte";
-    import PartnerZone from "$lib/components/PartnerZone.svelte";
-    import RebirthZone from "$lib/components/RebirthZone.svelte";
-    import RetireZone from "$lib/components/RetireZone.svelte";
-    import { gameStart, game_playing, gameSetting, automaticPhaseProgress } from "$lib/engine/GameManager";
-</script>
-
-<style>
-
-.main-container {
-        display: flex;
-        height: 100vh;
+<script lang="ts">
+    import { goto } from '$app/navigation';
+    
+    function startGame() {
+      goto('/game');  // 게임 화면으로 이동
     }
 
-    /* 리타이어존을 왼쪽에 길게 배치 */
-    .left-container {
-        flex: 0.2; /* 전체 화면 중 20% 차지 */
-        display: flex;
-        justify-content: center;
-        align-items: center;
+    function createDeck() {
+      goto('/deck');
     }
 
-    /* 나머지 요소들이 오른쪽에 배치 */
-    .right-container {
-        flex: 0.8; /* 전체 화면 중 80% 차지 */
-        display: flex;
-        flex-direction: column;
-        gap: 20px;
-        align-items: center;
-        justify-content: flex-start;
+    function createRoom() {
+      goto('/room');
     }
-
-
-
-
-
-
-
-    .top-container {
-        display: flex;
-        gap: 20px;
-        align-items: flex-start;
-    }
-
-    .middle-container {
-        display: flex;
-        gap: 20px;
-        align-items: flex-start;
-    }
-
-    .bottom-container {
-        display: flex;
-        gap: 20px;
-        align-items: flex-start;
-    }
-</style>
-
-
-
-<div class="main-container">
-    <!-- 왼쪽에 리타이어존 -->
-    <div class="left-container">
-        <RetireZone />
+  </script>
+  
+  <main>
+    <h1>프로젝트 리버스 프로</h1>
+    <div class="menu">
+      <button on:click={startGame}>게임 시작</button>
+      <button on:click={createRoom}>방 생성</button>
+      <button on:click={createDeck}>덱 생성</button>
+      <!-- 다른 메뉴 버튼들 -->
     </div>
-
-    <!-- 오른쪽에 기존 게임 UI 유지 -->
-    <div class="right-container">
-
-
-  <PhaseCounter/>
-  <div class="top-container">
-    <RebirthZone/>
-    <EntryZone/>
-    <Deck/>
-  </div>
-<div class="middle-container">
-    <MemberZone/> 
-    <WaitingZone/>
-  </div>
-<hr>
-<div class="bottom-container">
-    <EnergyZone />
-    <PartnerZone/>
-</div>
-<hr>
-<HandZone/>
-{#if !$game_playing}
-    <button on:click={gameSetting}>Game Setting</button>
-    <button on:click={gameStart}>Start Game</button>
-    {:else}
-    <button on:click={automaticPhaseProgress}>Next Phase</button>
-{/if}
-
-</div>
-</div>
+  </main>
+  
+  <style>
+    main {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+    
+    .menu {
+      margin-top: 2rem;
+    }
+    
+    button {
+      padding: 0.8rem 1.5rem;
+      font-size: 1.2rem;
+      cursor: pointer;
+    }
+  </style>
