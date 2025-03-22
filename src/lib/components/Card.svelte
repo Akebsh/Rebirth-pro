@@ -11,6 +11,15 @@
 
     $: card_data.state.is_selected = $selected_card === card_data;
 
+    function handleRightClick(event: MouseEvent) {
+        console.log("우클릭 이벤트 감지됨!");
+        event.preventDefault(); // 기본 우클릭 메뉴 방지
+        card_data.state.is_tapped = !card_data.state.is_tapped;
+        selected_card.set(card_data); // 변경 사항 반영
+        
+    }
+
+
     function isClicked(event: MouseEvent) {
         const current_selected_card = get(selected_card);
         if (current_selected_card) {
@@ -19,6 +28,7 @@
 
         selected_card.set(card_data);
         card_data.state.is_selected = true;
+
 
         if (card_data.zone === "hand") {
             card_actions = ["덱", "엔트", "대기" ,"멤버", "에너", "파트", "리버" ,"리타"];
@@ -375,6 +385,7 @@
     {card_data.state.is_fading_in ? 'hand-fade-in' : 'hand-position'}
     {card_data.state.is_tapped ? 'tapped' : ''}"
     on:click={isClicked}
+    on:contextmenu={handleRightClick}
     aria-hidden="true">
     
     <div>
