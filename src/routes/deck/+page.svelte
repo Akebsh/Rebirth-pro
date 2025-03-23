@@ -4,6 +4,13 @@
     import type { Card } from './types';
 
 
+    interface Deck {
+        name: string;
+        cards: Card[];
+        createdAt: string;
+    }
+
+
     // 덱 상태 관리
     let selectedCards: Card[] = [];
     let searchTerm = '';
@@ -12,6 +19,8 @@
     let deckName = '새 덱';
     let savingStatus = '';
   
+    let savedDecks: Deck[] = [];
+
     // 필터링된 카드 목록
     $: filteredCards = cardList.filter(card => {
       // 검색어 필터링
@@ -42,7 +51,7 @@
       }
       
       // 카드의 복사본을 생성하여 덱에 추가
-      const cardCopy = JSON.parse(JSON.stringify(card));
+      const cardCopy = JSON.parse(JSON.stringify(card)) as Card;
       selectedCards = [...selectedCards, cardCopy];
     }
   
@@ -52,7 +61,7 @@
     }
   
     // 덱 저장하기
-    function saveDeck() {
+    function saveDeck(): void {
       if (selectedCards.length < 50) {
         alert('덱은 정확히 50장으로 구성해야 합니다.');
         return;
@@ -87,8 +96,7 @@
       }
     }
   
-    // 저장된 덱 목록
-    let savedDecks = [];
+    
     
     // 저장된 덱 불러오기
     function loadDeck(index: number) {
@@ -110,7 +118,7 @@
   
     onMount(() => {
       // 저장된 덱 목록 불러오기
-      const loadedDecks = JSON.parse(localStorage.getItem('savedDecks') || '[]');
+      const loadedDecks: Deck[] = JSON.parse(localStorage.getItem('savedDecks') || '[]');
       savedDecks = loadedDecks;
     });
   </script>
@@ -326,10 +334,6 @@
       box-shadow: 0 5px 15px rgba(0,0,0,0.1);
     }
     
-    .card-image {
-      height: 120px;
-      overflow: hidden;
-    }
     
     .card-image img {
       width: 100%;

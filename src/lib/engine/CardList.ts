@@ -13,13 +13,13 @@ const defaultCardState = {
 // 샘플 카드 데이터
 export const cardList: Card[] = [
   {
-    serial_number: "C001",
-    name: "불의 검사",
-    description: "공격 시 추가 데미지 +2",
+    serial_number: "IMS002B-115",
+    name: "후쿠마루 코이토",
+    description: "만물을 위조하는 자",
     image_url:
       "https://s3-ap-northeast-1.amazonaws.com/rebirth-fy.com/wordpress/wp-content/uploads/2025/03/RB_IMS_002B_115RRR.png",
-    atk: 5,
-    hp: 4,
+    atk: 3,
+    hp: 8,
     type: "character",
     subtype: "member",
     zone: "deck",
