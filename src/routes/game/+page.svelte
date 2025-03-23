@@ -1,7 +1,6 @@
 <script lang="ts">
-
     import { onMount } from 'svelte';
-    import Deck from "$lib/components/Deck.svelte";
+    import Deck from "$lib/components/Deck.svelte"; // ✅ Deck 컴포넌트 이름 변경
     import EntryZone from "$lib/components/EntryZone.svelte";
     import MemberZone from "$lib/components/MemberZone.svelte";
     import HandZone from "$lib/components/HandZone.svelte";
@@ -15,36 +14,33 @@
     import { deck_store } from "$lib/engine/CardStore";
     import type { Card } from './types';
 
-
-    interface DeckData {  // 'Deck' 대신 'DeckData' 사용
-    name: string;
-    cards: Card[];
-}
-
+    // ✅ Deck 인터페이스 정의 (DeckComponent와 충돌 방지)
+    interface DeckData {
+        name: string;
+        cards: Card[];
+        createdAt?: string;
+    }
 
     // 저장된 덱 관련 상태
-    let savedDecks: DeckData[] = [];
+    let savedDecks: DeckData[] = []; // ✅ Deck → DeckData로 변경
     let showDeckSelector = false;
     let selectedDeckName = '';
     let selectedDeckIndex = -1;
 
-
-    
-    
     // 저장된 덱 목록 불러오기
-    function loadSavedDecks(): DeckData[] {
-    savedDecks = JSON.parse(localStorage.getItem('savedDecks') || '[]') as DeckData[];
-    return savedDecks;
-}
+    function loadSavedDecks(): DeckData[] { // ✅ 반환 타입 추가
+        savedDecks = JSON.parse(localStorage.getItem('savedDecks') || '[]') as DeckData[];
+        return savedDecks;
+    }
 
     // 특정 덱 불러와서 게임에 적용하기
-    function loadDeckToGame(deckIndex) {
+    function loadDeckToGame(deckIndex: number): boolean { // ✅ deckIndex 타입 명시
         if (deckIndex < 0 || deckIndex >= savedDecks.length) {
             console.error("Invalid deck index");
             return false;
         }
         
-        const selectedDeck = savedDecks[deckIndex];
+        const selectedDeck: DeckData = savedDecks[deckIndex]; // ✅ Deck → DeckData로 변경
         selectedDeckName = selectedDeck.name;
         selectedDeckIndex = deckIndex;
         
@@ -52,32 +48,29 @@
         deck_store.set([]);
         
         // 선택한 덱의 카드들을 게임 덱에 추가
-        const deckCards = selectedDeck.cards.map(cardData => {
-            // 카드매니저의 createCard 함수 사용
-            return {
-                serial_number: cardData.serial_number,
-                name: cardData.name,
-                description: cardData.description,
-                image_url: cardData.image_url,
-                atk: cardData.atk,
-                hp: cardData.hp,
-                type: cardData.type,
-                subtype: cardData.subtype,
-                zone: "deck",
-                is_first_entry: cardData.subtype === 'member', // 멤버 카드가 첫 엔트리 후보
-                state: {
-                    is_animating: false,
-                    is_fading_in: false,
-                    is_fading_out: false,
-                    is_flipped: false,
-                    is_selected: false,
-                    is_tapped: false,
-                }
-            };
-        });
+        const deckCards: Card[] = selectedDeck.cards.map(cardData => ({
+            serial_number: cardData.serial_number,
+            name: cardData.name,
+            description: cardData.description,
+            image_url: cardData.image_url,
+            atk: cardData.atk,
+            hp: cardData.hp,
+            type: cardData.type,
+            subtype: cardData.subtype,
+            zone: "deck",
+            is_first_entry: cardData.subtype === 'member',
+            state: {
+                is_animating: false,
+                is_fading_in: false,
+                is_fading_out: false,
+                is_flipped: false,
+                is_selected: false,
+                is_tapped: false,
+            }
+        }));
         
         // 덱 섞기
-        const shuffledDeck = shuffleDeck(deckCards);
+        const shuffledDeck: Card[] = shuffleDeck(deckCards);
         
         // 덱 업데이트
         deck_store.set(shuffledDeck);
@@ -89,7 +82,7 @@
     }
 
     // 덱 섞기 함수 
-    function shuffleDeck(deck) {
+    function shuffleDeck(deck: Card[]): Card[] { // ✅ deck 타입 명시
         const shuffled = [...deck];
         for (let i = shuffled.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
@@ -99,14 +92,13 @@
     }
 
     // 덱 선택 모달 표시
-    function openDeckSelector() {
+    function openDeckSelector(): void {
         loadSavedDecks();
         showDeckSelector = true;
     }
 
     // 게임 시작 함수
-    function startGame() {
-        // 덱이 선택되었는지 확인
+    function startGame(): void {
         if (selectedDeckIndex === -1) {
             alert('게임을 시작하기 전에 덱을 선택해주세요.');
             return;
@@ -116,11 +108,9 @@
     }
 
     onMount(() => {
-        // 저장된 덱 목록 불러오기
         loadSavedDecks();
     });
 </script>
-
 <style>
     .main-container {
         display: flex;
@@ -367,7 +357,7 @@
                             <h3>{deck.name}</h3>
                             <div class="deck-stats">
                                 <p>카드 수: {deck.cards.length}</p>
-                                <p>생성일: {new Date(deck.createdAt).toLocaleDateString()}</p>
+                                <p>생성일: {deck.createdAt ? new Date(deck.createdAt).toLocaleDateString() : 'N/A'}</p>
                             </div>
                         </div>
                     {/each}
@@ -380,7 +370,6 @@
         </div>
     </div>
 {/if}
-
 
 <div class="header-actions">
     <a href="/" class="back-btn">메인 화면으로 돌아가기</a>
