@@ -2,13 +2,15 @@
     import { onMount } from 'svelte';
     import { cardList } from '$lib/engine/CardList';
     import type { Card } from './types';
-
+    import VirtualList from 'svelte-virtual-list';
 
     interface Deck {
         name: string;
         cards: Card[];
         createdAt: string;
     }
+
+    let isLoading = false;
 
 
     // 덱 상태 관리
@@ -21,8 +23,14 @@
   
     let savedDecks: Deck[] = [];
 
-    // 필터링된 카드 목록
-    $: filteredCards = cardList.filter(card => {
+
+    // 페이지네이션 추가
+  let currentPage = 1;
+  const pageSize = 10;
+  let displayedCards: Card[] = [];
+
+   // 필터링된 카드 목록
+ $: filteredCards = cardList ? cardList.filter(card => {
       // 검색어 필터링
       const matchesSearch = card.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
                             card.description.toLowerCase().includes(searchTerm.toLowerCase());
@@ -34,8 +42,64 @@
       const matchesSubtype = filterSubtype === 'all' || card.subtype === filterSubtype;
       
       return matchesSearch && matchesType && matchesSubtype;
-    });
+    }): [];
+
+
+  // 페이지네이션을 위한 추가 변수들
+  $: totalPages = Math.ceil(filteredCards.length / pageSize);
+
   
+
+ // 페이지별 카드 로드 함수
+ function loadPageCards() {
+        displayedCards = getCardsByPage(currentPage, pageSize);
+    }
+
+    // 특정 페이지의 카드 데이터를 동적으로 가져오는 함수
+    function getCardsByPage(page = 1, pageSize = 50) {
+        const startIndex = (page - 1) * pageSize;
+        return filteredCards.slice(startIndex, startIndex + pageSize);
+    }
+
+    // 다음 페이지 로드 함수
+    function nextPage() {
+        if (currentPage < totalPages) {
+            currentPage++;
+            loadPageCards();
+        }
+    }
+
+    // 이전 페이지 로드 함수
+    function prevPage() {
+        if (currentPage > 1) {
+            currentPage--;
+            loadPageCards();
+        }
+    }
+
+    // 컴포넌트 마운트 시 초기 페이지 로드
+    onMount(() => {
+    if (filteredCards.length > 0) {
+        loadPageCards();
+    } else {
+        console.warn("Filtered cards is empty during onMount.");
+    }
+});
+
+    // 필터 변경 시 첫 페이지로 리셋
+    $: if (searchTerm || filterType || filterSubtype) {
+        currentPage = 1;
+        loadPageCards();
+    }
+
+
+
+    let items = filteredCards || []; // 가상 리스트로 관리
+    let rowHeight = 100; // 카드 높이
+
+    $: console.log('Total Pages:', totalPages);
+    $: console.log('Current Page:', currentPage);
+
     // 덱에 카드 추가
     function addCardToDeck(card: Card) {
       if (selectedCards.length >= 50) {
@@ -540,7 +604,32 @@
 
   </style>
 
+<div class="pagination">
+  <button on:click={prevPage} disabled={currentPage === 1}>이전</button>
+  <span>{currentPage} / {totalPages}</span>
+  <button on:click={nextPage} disabled={currentPage === totalPages}>다음</button>
+</div>
+
 
 <div class="header-actions">
     <a href="/" class="back-btn">메인 화면으로 돌아가기</a>
 </div>
+
+{#if isLoading}
+  <p>로딩 중...</p>
+{:else}
+  {#each displayedCards as card}
+    <!-- 카드 렌더링 -->
+  {/each}
+{/if}
+
+<VirtualList
+    items={items}
+    rowHeight={rowHeight}
+    {currentPage}
+    {pageSize}
+    let:item>
+    <div class="card">
+        <!-- 카드 내용 렌더링 -->
+    </div>
+</VirtualList>
