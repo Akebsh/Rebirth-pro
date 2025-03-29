@@ -8,8 +8,15 @@
     let card_actions = Array<string>();
     let showMemberSubmenu: boolean = false;
     let showDeckSubmenu: boolean = false;
+    let isExpanded: boolean = false;
 
     $: card_data.state.is_selected = $selected_card === card_data;
+
+
+    function handleLongPress(event: MouseEvent) {
+    event.preventDefault(); // 기본 동작 방지
+    isExpanded = !isExpanded; // 카드 크기 토글
+}
 
     function handleRightClick(event: MouseEvent) {
         console.log("우클릭 이벤트 감지됨!");
@@ -224,6 +231,10 @@
         cursor: pointer;
         transition: transform 0.3s ease;
     }
+    
+    .card.expanded {
+    transform: scale(4); /* 확대 비율 */
+}
 
     img {
         width: 100%;
@@ -377,6 +388,8 @@
     .tapped {
         transform: rotate(90deg);
     }
+
+
 </style>
 
 <div class="card 
@@ -384,8 +397,10 @@
     {card_data.state.is_animating ? 'deck-fade-out' : ''}
     {card_data.state.is_fading_in ? 'hand-fade-in' : 'hand-position'}
     {card_data.state.is_tapped ? 'tapped' : ''}"
+    class:expanded={isExpanded} 
     on:click={isClicked}
     on:contextmenu={handleRightClick}
+    on:mousedown={handleLongPress} 
     aria-hidden="true">
     
     <div>
@@ -396,7 +411,7 @@
         {/if}
     </div>
 
-    {#if card_data.state.is_selected}
+    {#if card_data.state.is_selected && !isExpanded}
         <div class="action-menu">
             {#each card_actions as action, i}
                 <button class="action-menu-btn" 
