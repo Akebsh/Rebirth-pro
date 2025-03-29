@@ -11,8 +11,10 @@
     import RebirthZone from "$lib/components/RebirthZone.svelte";
     import RetireZone from "$lib/components/RetireZone.svelte";
     import { gameStart, game_playing, automaticPhaseProgress } from "$lib/engine/GameManager";
-    import { deck_store } from "$lib/engine/CardStore";
+    import { deck_store , entry_store } from "$lib/engine/CardStore";
     import type { Card } from './types';
+    import { get } from "svelte/store";
+    import { CardMovement } from "$lib/engine/CardManager";
 
     // ✅ Deck 인터페이스 정의 (DeckComponent와 충돌 방지)
     interface DeckData {
@@ -26,6 +28,26 @@
     let showDeckSelector = false;
     let selectedDeckName = '';
     let selectedDeckIndex = -1;
+
+
+
+    function moveDeckToEntry() {
+        const current_deck = get(deck_store);
+        if (current_deck.length === 0) {
+            console.log("덱에 카드가 없습니다.");
+            return;
+        }
+
+        const card = current_deck[current_deck.length - 1]; // 덱 맨 위 카드 선택
+        if (get(entry_store).length > 0) {
+            console.log("엔트리에 이미 카드가 있습니다.");
+            return;
+        }
+
+        console.log(`(덱 → 엔트리): ${card.name}`);
+        CardMovement.moveCard(card, "deck", "entry", "top"); // 카드 이동 실행
+    }
+
 
     // 저장된 덱 목록 불러오기
     function loadSavedDecks(): DeckData[] { // ✅ 반환 타입 추가
@@ -136,10 +158,27 @@
     }
 
     .top-container {
-        display: flex;
-        gap: 20px;
-        align-items: flex-start;
-    }
+    display: flex;
+    gap: 40px; /* 요소들 간 간격 유지 */
+    align-items: center; /* 버튼이 수직 가운데 정렬되도록 */
+    justify-content: flex-start;
+}
+
+
+    .entry-in-button {
+    padding: 10px 20px;
+    background-color: #3498db;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.entry-in-button:hover {
+    background-color: #2980b9;
+}
 
     .middle-container {
         display: flex;
@@ -153,6 +192,19 @@
         align-items: flex-start;
     }
     
+
+
+    .rebirth-entry-container {
+    display: flex;
+    gap: 100px; /* 두 요소 사이 간격 */
+    margin-left: -300px; /* 왼쪽으로 더 당김 */
+    margin-right: 50px;
+}
+
+
+
+
+
     /* 덱 선택 관련 스타일 */
     .deck-selection {
         display: flex;
@@ -303,9 +355,13 @@
     <div class="right-container">
         <PhaseCounter/>
         <div class="top-container">
+          <div class="rebirth-entry-container">
             <RebirthZone/>
             <EntryZone/>
+          </div>
+          <button class="entry-in-button" on:click={moveDeckToEntry}>엔트리 인</button>
             <Deck/>
+          
         </div>
         <div class="middle-container">
             <MemberZone/> 
