@@ -9,14 +9,30 @@
     let showMemberSubmenu: boolean = false;
     let showDeckSubmenu: boolean = false;
     let isExpanded: boolean = false;
+    let pressTimer: number | null = null; // 타이머 변수
 
     $: card_data.state.is_selected = $selected_card === card_data;
 
+ // 꾹 눌렀을 때 시작
+ function handleMouseDown(event: MouseEvent) {
+        pressTimer = window.setTimeout(() => {
+            isExpanded = !isExpanded;  // 1초 이상 누르면 확대/축소 토글
+        }, 300); // 1초 이상 눌렀을 때
+    }
 
-    function handleLongPress(event: MouseEvent) {
-    event.preventDefault(); // 기본 동작 방지
-    isExpanded = !isExpanded; // 카드 크기 토글
-}
+    // 손을 뗄 때
+    function handleMouseUp(event: MouseEvent) {
+        if (pressTimer !== null) {
+            clearTimeout(pressTimer);  // 타이머 초기화
+        }
+    }
+
+    // 마우스가 카드에서 벗어났을 때
+    function handleMouseLeave(event: MouseEvent) {
+        if (pressTimer !== null) {
+            clearTimeout(pressTimer);  // 타이머 초기화
+        }
+    }
 
     function handleRightClick(event: MouseEvent) {
         console.log("우클릭 이벤트 감지됨!");
@@ -221,112 +237,116 @@
 </script>
 
 <style>
-    .card {
-        position: relative;
-        width: 126px;
-        height: 176px;
-        border: 2px solid #42d86f;
-        border-radius: 9px;
-        perspective: 1000px;
-        cursor: pointer;
-        transition: transform 0.3s ease;
-    }
-    
-    .card.expanded {
+   .card {
+    position: relative;
+    width: 126px;
+    height: 176px;
+    border: 2px solid #42d86f;
+    border-radius: 9px;
+    perspective: 1000px;
+    cursor: pointer;
+    transition: transform 0.3s ease;
+}
+
+.card.expanded {
     transform: scale(4); /* 확대 비율 */
 }
 
-    img {
-        width: 100%;
-        height: 100%;
-    }
 
-    .action-menu {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        background-color: rgba(255, 255, 255, 0.9); /* 반투명 배경 */
-        width: 140px;
-        height: 140px;
-        display: grid;
-        grid-template-columns: repeat(3, 1fr); /* 3x3 정사각형 배치 */
-        grid-template-rows: repeat(3, 1fr);
-        justify-items: center;
-        align-items: center;
-        border: 2px solid #000;
-        border-radius: 10px;
-        padding: 5px;
-        z-index: 100;
-        opacity: 1;
-        transform: translate(-50%, -50%) scale(0.8);
-        transition: opacity 0.2s ease-out, transform 0.2s ease-out;
-    }
+img {
+    width: 100%;
+    height: 100%;
+}
 
-    .action-menu-btn {
-        width: 40px;
-        height: 40px;
-        background-color: #427cd8;
-        border: none;
-        color: white;
-        font-size: 12px;
-        font-weight: bold;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        border-radius: 6px;
-        cursor: pointer;
-        transition: all 0.2s ease-in-out;
-        box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3);
-    }
+.action-menu {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.8);
+    background-color: rgba(255, 255, 255, 0.9); /* 반투명 배경 */
+    width: 140px;
+    height: 140px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr); /* 3x3 정사각형 배치 */
+    grid-template-rows: repeat(3, 1fr);
+    justify-items: center;
+    align-items: center;
+    border: 2px solid #000;
+    border-radius: 10px;
+    padding: 5px;
+    z-index: 1000;
+    opacity: 1;
+    transition: opacity 0.2s ease-out, transform 0.2s ease-out;
+}
 
-    .action-menu-btn:hover {
-        background-color: #1837d4;
-        transform: scale(1.1);
-    }
+.card.tapped .action-menu {
+    transform: translate(-50%, -50%) scale(0.8) rotate(-90deg); /* 카드와 반대방향으로 회전 */
+}
 
-    .action-menu-btn:active {
-        transform: scale(0.9);
-        box-shadow: none;
-    }
+.action-menu-btn {
+    width: 40px;
+    height: 40px;
+    background-color: #427cd8;
+    border: none;
+    color: white;
+    font-size: 12px;
+    font-weight: bold;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3);
+}
 
+.action-menu-btn:hover {
+    background-color: #1837d4;
+    transform: scale(1.1);
+}
 
-  /* 멤버 서브메뉴 스타일 */
-  .member-submenu {
-        position: absolute;
-        top: -10px; /* 카드 위쪽에 표시 */
-        left: 50%;
-        transform: translateX(-50%);
-        display: flex;
-        gap: 5px;
-        justify-items: center;
-        align-items: center;
-        border: 2px solid #000;
-        border-radius: 10px;
-        padding: 5px;
-        background-color: rgba(255, 255, 255, 0.9); /* 반투명 배경 */
-        z-index: 300;
-        opacity: 1;
-        visibility: visible;
-    }
-    
-    .member-btn {
-        width: 50px;
-        height: 40px;
-        background-color: #427cd8;
-        border: none;
-        color: white;
-        font-size: 12px;
-        cursor: pointer;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        border-radius: 5px;
-    }
-    
-    .member-btn:hover {
-        background-color: #1837d4;
-    }
+.action-menu-btn:active {
+    transform: scale(0.9);
+    box-shadow: none;
+}
+
+/* 멤버 서브메뉴 스타일 */
+.member-submenu {
+    position: absolute;
+    top: -10px; /* 카드 위쪽에 표시 */
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 5px;
+    justify-items: center;
+    align-items: center;
+    border: 2px solid #000;
+    border-radius: 10px;
+    padding: 5px;
+    background-color: rgba(255, 255, 255, 0.9); /* 반투명 배경 */
+    z-index: 300;
+    opacity: 1;
+    visibility: visible;
+}
+
+.member-btn {
+    width: 50px;
+    height: 40px;
+    background-color: #427cd8;
+    border: none;
+    color: white;
+    font-size: 12px;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 5px;
+}
+
+.member-btn:hover {
+    background-color: #1837d4;
+}
+
 
     .deck-submenu {
         position: absolute;
@@ -398,9 +418,12 @@
     {card_data.state.is_fading_in ? 'hand-fade-in' : 'hand-position'}
     {card_data.state.is_tapped ? 'tapped' : ''}"
     class:expanded={isExpanded} 
+    class:flipped={card_data.state.is_flipped} 
     on:click={isClicked}
     on:contextmenu={handleRightClick}
-    on:mousedown={handleLongPress} 
+    on:mousedown={handleMouseDown}  
+    on:mouseup={handleMouseUp}    
+    on:mouseleave={handleMouseLeave}  
     aria-hidden="true">
     
     <div>
