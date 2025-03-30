@@ -12,6 +12,7 @@ import {
 } from "./CardStore";
 
 export interface Card {
+  id?: string;
   serial_number: string;
   name: string;
   description: string;
