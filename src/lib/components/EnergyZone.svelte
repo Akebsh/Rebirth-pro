@@ -1,7 +1,17 @@
 <script lang="ts">
-    import { energy_store } from "$lib/engine/CardStore";
+    // ✅ 상대방 에너지 스토어 import (CardStore.ts에 정의 필요)
+    import { energy_store, opponent_energy_store } from "$lib/engine/CardStore";
     import Card from "./Card.svelte";
-</script>
+    import type { Card as CardType } from '../../routes/game/types'; // 타입 경로 확인
+  
+    // ✅ player prop 선언
+    export let player: 'player' | 'opponent' | undefined = 'player';
+  
+    // ✅ player 값에 따라 사용할 스토어 선택
+    $: zoneStore = player === 'opponent' ? opponent_energy_store : energy_store;
+  
+    $: cards = $zoneStore as CardType[];
+  </script>
 
 <style>
     .energy {
@@ -33,12 +43,12 @@
 </style>
 
 <div class="energy">
-    <h3>Energy</h3>
-    <div class="energy-container">
-        {#if $energy_store.length > 0}
-            {#each $energy_store as card }
-                <Card card_data={card}></Card>
-            {/each}
-        {/if}
-    </div>
+  <h3>{player === 'opponent' ? 'Opponent Energy' : 'Energy'} ({cards.length})</h3>
+  <div class="energy-container">
+      {#if cards.length > 0}
+          {#each cards as card (card.serial_number)}
+              <Card card_data={card}></Card>
+          {/each}
+      {/if}
+  </div>
 </div>

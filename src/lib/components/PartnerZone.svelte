@@ -1,7 +1,20 @@
 <script lang="ts">
-    import { partner_store } from "$lib/engine/CardStore";
+    // ✅ 상대방 파트너 스토어 import (CardStore.ts에 정의 필요)
+    import { partner_store, opponent_partner_store } from "$lib/engine/CardStore";
     import Card from "./Card.svelte";
-</script>
+    import type { Card as CardType } from '../../routes/game/types'; // 타입 경로 확인
+  
+    // ✅ player prop 선언
+    export let player: 'player' | 'opponent' | undefined = 'player';
+  
+    // ✅ player 값에 따라 사용할 스토어 선택
+    $: zoneStore = player === 'opponent' ? opponent_partner_store : partner_store;
+  
+    // Partner는 보통 하나만 존재하므로 첫 번째 카드를 사용
+    $: partner_card = $zoneStore[0] as CardType | undefined;
+  
+  </script>
+  
 
 <style>
     .partner {
@@ -33,12 +46,12 @@
 </style>
 
 <div class="partner">
-    <h3>Partner</h3>
+    <h3>{player === 'opponent' ? 'Opponent Partner' : 'Partner'}</h3>
     <div class="partner-container">
-        {#if $partner_store.length > 0}
-            {#each $partner_store as card }
-                <Card card_data={card}></Card>
-            {/each}
-        {/if}
+        <div class="partner-slot">
+            {#if partner_card}
+                <Card card_data={partner_card}></Card>
+            {/if}
+        </div>
     </div>
-</div>
+  </div>

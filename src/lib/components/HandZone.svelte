@@ -1,7 +1,20 @@
 <script lang="ts">
-    import { hand_store } from "$lib/engine/CardStore";
+    // ✅ 상대방 핸드 스토어 import (CardStore.ts에 정의 필요)
+    import { hand_store, opponent_hand_store } from "$lib/engine/CardStore";
     import Card from "./Card.svelte";
-</script>
+    import type { Card as CardType } from '../../routes/game/types'; // 타입 경로 확인
+  
+    // ✅ player prop 선언
+    export let player: 'player' | 'opponent' | undefined = 'player';
+  
+    // ✅ player 값에 따라 사용할 스토어 선택
+    $: zoneStore = player === 'opponent' ? opponent_hand_store : hand_store;
+  
+    // $: cards = $zoneStore; // 스토어 구독 (타입 명시 위해 아래처럼)
+    $: cards = $zoneStore as CardType[];
+  
+  </script>
+
 
 <style>
  .hand {
@@ -34,12 +47,16 @@
 </style>
 
 <div class="hand">
-    <h3>Hand</h3>
-    <div class="hand-container">
-        {#if $hand_store.length > 0}
-            {#each $hand_store as card }
-                <Card card_data={card}></Card>
-            {/each}
-        {/if}
-    </div>
+  <h3>{player === 'opponent' ? 'Opponent Hand' : 'Hand'} ({cards.length})</h3>
+  <div class="hand-container">
+    {#if cards.length > 0}
+       {#each cards as card (card.serial_number)}
+          {#if player === 'opponent'}
+             <Card card_data={card}></Card>
+          {:else}
+             <Card card_data={card}></Card>
+          {/if}
+       {/each}
+    {/if}
+  </div>
 </div>

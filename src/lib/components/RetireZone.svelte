@@ -1,7 +1,17 @@
 <script lang="ts">
-    import { retire_store } from "$lib/engine/CardStore";
+    // ✅ 상대방 스토어 import (CardStore.ts에 정의 필요)
+    import { retire_store, opponent_retire_store } from "$lib/engine/CardStore";
     import Card from "./Card.svelte";
-</script>
+    import type { Card as CardType } from '../../routes/game/types'; // 타입 경로 확인
+  
+    // ✅ player prop 선언
+    export let player: 'player' | 'opponent' | undefined = 'player';
+  
+    // ✅ player 값에 따라 사용할 스토어 선택
+    $: zoneStore = player === 'opponent' ? opponent_retire_store : retire_store;
+  
+    $: cards = $zoneStore as CardType[];
+  </script>
 
 <style>
     .retire {
@@ -49,12 +59,16 @@
 </style>
 
 <div class="retire">
-    <h3>Retire</h3>
-    <div class="retire-container">
-        {#if $retire_store.length > 0}
-            {#each $retire_store as card }
-                <Card card_data={card}></Card>
-            {/each}
-        {/if}
-    </div>
+  <h3>{player === 'opponent' ? 'Opponent Retire' : 'Retire'} ({cards.length})</h3>
+  <div class="retire-container">
+      {#if cards.length > 0}
+          {#each cards as card, i (card.serial_number)}
+              <div class="card-component-wrapper" style="--card-index: {cards.length - i};">
+                 <Card card_data={card}></Card>
+              </div>
+          {/each}
+      {:else}
+           <div style="color: #888; margin-top: 20px;">Empty</div>
+      {/if}
+  </div>
 </div>

@@ -1,7 +1,17 @@
 <script lang="ts">
-    import { rebirth_store } from "$lib/engine/CardStore";
+    // ✅ 상대방 스토어 import (CardStore.ts에 정의 필요)
+    import { rebirth_store, opponent_rebirth_store } from "$lib/engine/CardStore";
     import Card from "./Card.svelte";
-</script>
+    import type { Card as CardType } from '../../routes/game/types'; // 타입 경로 확인
+  
+    // ✅ player prop 선언
+    export let player: 'player' | 'opponent' | undefined = 'player';
+  
+    // ✅ player 값에 따라 사용할 스토어 선택
+    $: zoneStore = player === 'opponent' ? opponent_rebirth_store : rebirth_store;
+  
+    $: cards = $zoneStore as CardType[];
+  </script>
 
 <style>
     .rebirth {
@@ -33,12 +43,14 @@
 </style>
 
 <div class="rebirth">
-    <h3>Re-Birth</h3>
+    <h3>{player === 'opponent' ? 'Opponent Re-Birth' : 'Re-Birth'} ({cards.length})</h3>
     <div class="rebirth-container">
-        {#if $rebirth_store.length > 0}
-            {#each $rebirth_store as card }
+        {#if cards.length > 0}
+            {#each cards as card (card.serial_number)}
                 <Card card_data={card}></Card>
             {/each}
+        {:else}
+             <div style="width: 126px; height: 176px; border: 2px dashed #666; border-radius: 9px; display: flex; justify-content: center; align-items: center; background: rgba(255, 255, 255, 0.1);"></div>
         {/if}
     </div>
-</div> 
+  </div>

@@ -1,22 +1,39 @@
 <script lang="ts">
-    import { waiting_store } from "$lib/engine/CardStore";
+    // ✅ 상대방 스토어 import (CardStore.ts에 정의 필요)
+    import { waiting_store, opponent_waiting_store } from "$lib/engine/CardStore";
     import Card from "./Card.svelte";
-
+    import type { Card as CardType } from '../../routes/game/types'; // 타입 경로 확인
+    import { get } from "svelte/store";
+  
+    // ✅ player prop 선언
+    export let player: 'player' | 'opponent' | undefined = 'player';
+  
+    // ✅ player 값에 따라 사용할 스토어 선택
+    $: zoneStore = player === 'opponent' ? opponent_waiting_store : waiting_store;
+  
+    // 팝업 관련 상태는 그대로 유지
     let showPopup = false;
     let popupX = 0;
     let popupY = 0;
-
+  
+    // Context 메뉴 핸들러 (팝업 여는 로직)
     function handleContextMenu(event: MouseEvent) {
-        event.preventDefault();
-        showPopup = true;
-        popupX = event.clientX;
-        popupY = event.clientY;
+        // 카드가 있을 때만 팝업 열기
+        if (get(zoneStore).length > 0) {
+            event.preventDefault();
+            showPopup = true;
+            popupX = event.clientX;
+            popupY = event.clientY;
+        }
     }
-
+  
+    // 팝업 닫기 함수
     function closePopup() {
         showPopup = false;
     }
-</script>
+  
+    $: cards = $zoneStore as CardType[]; // 타입 명시
+  </script>
 
 <style>
     .waiting {
@@ -132,34 +149,31 @@
 </style>
 
 <div class="waiting" on:contextmenu={handleContextMenu}>
-    <h3>Waiting ({$waiting_store.length})</h3>
+    <h3>{player === 'opponent' ? 'Opponent Waiting' : 'Waiting'} ({cards.length})</h3>
     <div class="waiting-container">
         <div class="cards-stack">
-            {#if $waiting_store.length > 0}
-                {#each $waiting_store as card, i}
-                    <div class="card-wrapper" style="transform: translateY({i * -1}px) translateX({i * 0.5}px)">
+            {#if cards.length > 0}
+                {#each cards.slice(-5) as card, i (card.serial_number)}
+                    <div class="card-wrapper" style="transform: translateY({i * 1}px) translateX({i * 1}px); z-index: {i};">
                         <Card card_data={card} />
                     </div>
                 {/each}
-            {:else}
-                <div class="waiting-slot" />
-            {/if}
+                {:else}
+                <div class="waiting-slot" /> {/if}
         </div>
     </div>
-</div>
-
-{#if showPopup}
-    <div class="popup" 
-         style="left: {popupX}px; top: {popupY}px">
-        <button class="close-button" on:click={closePopup}>×</button>
-        <div class="popup-content">
-            {#each $waiting_store as card}
-                <div class="popup-card">
-                    <Card card_data={card} />
-                </div>
-            {/each}
-        </div>
-    </div>
-{/if}
-
-<svelte:window on:click={closePopup} />
+  </div>
+  
+  {#if showPopup}
+      <div class="popup"
+           style="left: {popupX}px; top: {popupY}px">
+          <button class="close-button" on:click|stopPropagation={closePopup}>×</button>
+          <div class="popup-content">
+              {#each cards as card (card.serial_number)}
+                  <div class="popup-card">
+                      <Card card_data={card} />
+                  </div>
+              {/each}
+          </div>
+      </div>
+      {/if}

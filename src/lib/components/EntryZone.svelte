@@ -1,8 +1,23 @@
 <script lang="ts">
-    import { entry_store } from "$lib/engine/CardStore";
+    import { entry_store , opponent_entry_store} from "$lib/engine/CardStore";
     import Card from "./Card.svelte";
+    import type { Card as CardType } from '../../routes/game/types';
 
-    $: entry_card = $entry_store[0];
+    // ✅ player prop을 선언합니다. 기본값은 'player'
+  export let player: 'player' | 'opponent' | undefined = 'player';
+
+// ✅ player prop 값에 따라 사용할 스토어를 결정합니다.
+$: zoneStore = player === 'opponent' ? opponent_entry_store : entry_store;
+
+// ✅ 결정된 스토어에서 첫 번째 카드를 가져옵니다.
+$: entry_card = $zoneStore[0] as CardType | undefined; // 타입 단언 추가
+
+
+
+
+
+
+
 </script>
 
 <style>
@@ -40,7 +55,7 @@
 </style>
 
 <div class="entry">
-    <h3>Entry</h3>
+    <h3>{player === 'opponent' ? 'Opponent Entry' : 'Entry'}</h3>
     <div class="entry-container">
         <div class="entry-slot">
             {#if entry_card}
@@ -48,4 +63,4 @@
             {/if}
         </div>
     </div>
-</div>
+  </div>
