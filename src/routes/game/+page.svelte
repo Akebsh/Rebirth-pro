@@ -12,9 +12,10 @@
     import RetireZone from "$lib/components/RetireZone.svelte";
     import { gameStart, game_playing, automaticPhaseProgress } from "$lib/engine/GameManager";
     import { deck_store , entry_store } from "$lib/engine/CardStore";
-    import type { Card } from './types';
+    import type { Card } from '$lib/engine/CardManager';
     import { get } from "svelte/store";
     import { CardMovement } from "$lib/engine/CardManager";
+    import { v4 as uuidv4 } from 'uuid';
 
     // ✅ Deck 인터페이스 정의 (DeckComponent와 충돌 방지)
     interface DeckData {
@@ -94,6 +95,7 @@
     // 덱 데이터 -> 카드 객체 배열 생성 (기존 로직 유지)
     function createDeckCards(cardDataArray: Card[]): Card[] {
         return cardDataArray.map(cardData => ({
+            id: uuidv4(),
             serial_number: cardData.serial_number,
             name: cardData.name,
             description: cardData.description,
@@ -178,117 +180,83 @@
 
 
 <style>
+
+
 .game-container {
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  height: 100vh;
-  padding: 20px;
+  display: flex; /* 내부 요소 정렬 위해 */
+  flex-direction: column; /* 세로 방향 배치 (위: 상대, 중간: 구분선, 아래: 나) */
+  min-height: 100vh; /* 최소 화면 전체 높이 */
+  padding: 8px; /* 화면 가장자리와 약간의 여백 */
   box-sizing: border-box;
+  align-items: center; /* 가로축 중앙 정렬 (보드 래퍼를 중앙에) */
+  /* background: #어두운배경색; /* 게임판 배경색 추천 */
 }
 
-/* 필드 크기 지정 */
-.opponent-field, .player-field {
+.board-wrapper {
+  width: 100%;
+  max-width: 1600px; /* 최대 너비 */
+  flex: 1; /* 세로 공간 채우기 */
+  display: grid; /* ★ 3열 Grid 사용 */
+  grid-template-columns: auto 1fr auto; /* 양쪽 리타이어: 자동, 중앙: 나머지 공간 */
+  gap: 8px; /* 칸 사이 간격 */
+  padding: 5px; /* 내부 여백 */
+  min-height: 0; /* 높이 문제 방지 */
+}
+
+
+
+.center-play-area {
+  display: flex;
+  flex-direction: column; /* 위: 상대, 중간: 구분선, 아래: 나 */
+  gap: 5px; /* 내부 요소 간격 */
+  min-width: 0; /* 너비 문제 방지 */
+}
+.player-main-zones,
+.opponent-zones-rotated {
   flex: 1;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  display: grid; /* ★ Grid 사용 */
+  min-height: 300px; /* 최소 높이 (내용물 따라 조절) */
+  padding: 8px; /* 내부 여백 */
+  gap: 8px; /* Zone 간의 간격 */
+  border: 1px dashed #444; /* 영역 확인용 임시 테두리 (나중에 제거) */
+  border-radius: 5px; /* 약간 둥글게 */
+  background-color: rgba(0, 0, 0, 0.1); /* 배경색 */
+
+  /* ▼▼▼ Grid 구조 정의 ▼▼▼ */
+  /* 컬럼 정의: Rebirth/Wait/Energy | Entry/Member/Partner | Deck/Member/Partner */
+  /* 크기는 내용물(auto)과 남은 공간(1fr)으로 조절 */
+  grid-template-columns: auto 1fr auto;
+
+  /* 로우 정의: 1,2,3행은 내용물 크기만큼, 마지막 핸드 행은 남은 공간 모두 */
+  grid-template-rows: auto auto auto auto 1fr;
+
+  /* 영역 이름 정의 */
+  grid-template-areas:
+    "phase   phase   phase phase"
+    "rebirth entry entry-btn deck"    /* 1행: 리버스, 엔트리, 덱 */
+    "waiting member  member member" 
+    "energy . partner ."       /* 3행: 에너지, 파트너, 빈칸 */
+    "pregame pregame pregame pregame" 
+    "hand    hand   hand  hand";   /* 4행: 핸드(3칸 차지) */
+  /* ▲▲▲ Grid 구조 정의 끝 ▲▲▲ */
+
+  /* opponent-zones-rotated는 transform: rotate(180deg); 유지 */
 }
 
-.opponent-field {
-  justify-content: flex-end;
-  margin-right: 2000px; /* 오른쪽으로 이동 */
+.opponent-zones-rotated {
+    transform: rotate(180deg);
+   
 }
 
-.player-field {
-  justify-content: flex-start;
-  margin-left: 2000px; /* 왼쪽으로 이동 */
-}
 
-/* 구분선 */
 .field-divider {
-  height: 4px;
-  background-color: #444;
-  margin: 10px 0;
+  height: 2px;
+  background-color: #555;
+  margin: 0;
   width: 100%;
+  flex-shrink: 0;
 }
 
-/* 메인 컨테이너 */
-.main-container {
-  display: flex;
-  width: 95%;
-  max-width: 1200px;
-}
-
-/* 상대 필드 회전 */
-.opponent-field .main-container {
-  transform: rotate(180deg);
-  flex-direction: row-reverse; /* 컨테이너 좌우 반전 */
-}
-
-/* 좌우 컨테이너 */
-.left-container {
-  flex: 0.2;
-  padding: 10px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.right-container {
-  flex: 0.8;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  padding: 10px;
-}
-
-/* 상단 컨테이너 */
-.top-container {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-}
-
-/* 엔트리존 컨테이너 */
-.rebirth-entry-container {
-  display: flex;
-  gap: 20px;
-}
-
-/* 중간 컨테이너 */
-.middle-container {
-  display: flex;
-  gap: 20px;
-  margin: 10px 0;
-}
-
-/* 하단 컨테이너 */
-.bottom-container {
-  display: flex;
-  gap: 20px;
-  margin: 10px 0;
-}
-
-/* 각 영역 */
-RebirthZone, EntryZone, MemberZone, WaitingZone, EnergyZone, PartnerZone, HandZone {
-  min-width: 80px;
-  min-height: 60px;
-  padding: 5px;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-  background-color: rgba(240, 240, 240, 0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-/* 상대방 필드에서 플레이어 UI 숨김 */
-
-/* 카드 핸드 영역 */
-HandZone {
-  width: 100%;
-}
 
 /* 버튼 스타일 */
 button {
@@ -305,16 +273,7 @@ button:hover {
   background-color: #2980b9;
 }
 
-/* 반응형 조정 */
-@media (max-width: 1200px) {
-  .rebirth-entry-container {
-    gap: 10px;
-  }
-  
-  .top-container, .middle-container, .bottom-container {
-    gap: 10px;
-  }
-}
+
     /* 덱 선택 관련 스타일 */
     .deck-selection {
         display: flex;
@@ -451,103 +410,109 @@ button:hover {
     background-color: #455A64;
   }
 
-
-
 </style>
 
 
 
-
 <div class="game-container">
-  <div class="opponent-field">
-    <div class="main-container opponent">
-      <div class="right-container rotated">
-        <PhaseCounter/>
-        <div class="top-container">
-          <div class="rebirth-entry-container">
-            <RebirthZone player="opponent"/>
-            <EntryZone player="opponent"/></div>
-          <button class="entry-in-button" disabled>엔트리 인</button>
-          <Deck player="opponent"/> </div>
-        <div class="middle-container">
-          <MemberZone player="opponent"/>
-          <WaitingZone player="opponent"/> </div>
-        <hr>
-        <div class="bottom-container">
-          <EnergyZone player="opponent"/>
-          <PartnerZone player="opponent"/> </div>
-        <hr>
-        <HandZone player="opponent"/> </div>
+  <div class="board-wrapper">
 
-      <div class="left-container rotated">
-        <RetireZone player="opponent"/> </div>
+    
+    <div class="player-retire-area">
+       
+      <RetireZone player="player" />
     </div>
-  </div>
 
-  <div class="field-divider"></div>
-
-  <div class="player-field">
-    <div class="main-container">
-      <div class="left-container">
-        <RetireZone player="player"/> </div>
-
-      <div class="right-container">
-        <PhaseCounter/>
-        <div class="top-container">
-          <div class="rebirth-entry-container">
-            <RebirthZone player="player"/>
-            <EntryZone player="player"/> </div>
-          <button class="entry-in-button" on:click={movePlayerDeckToEntry}>엔트리 인</button>
-          <Deck player="player"/> </div>
-        <div class="middle-container">
-          <MemberZone player="player"/>
-          <WaitingZone player="player"/> </div>
-        <hr>
-        <div class="bottom-container">
-          <EnergyZone player="player"/>
-          <PartnerZone player="player"/> </div>
-        <hr>
-        <HandZone player="player"/> {#if !$game_playing}
-          <div class="deck-selection-area" style="margin-top: 10px; padding: 10px; border: 1px solid #eee; border-radius: 5px; background-color: #f9f9f9;">
-            <div class="player-deck-selector" style="display: flex; gap: 10px; align-items: center; margin-bottom: 10px;">
-              <span>플레이어 덱:</span>
-              {#if playerSelectedDeckName}
-                  <div class="deck-info" style="padding: 5px 10px; background-color: #e3f2fd; border-radius: 4px; font-size: 0.9rem; border: 1px solid #bbdefb;">
-                      <strong>{playerSelectedDeckName}</strong>
-                  </div>
-                  <button class="secondary" on:click={() => openDeckSelector('player')}>다른 덱 선택</button>
-              {:else}
-                  <button class="primary" on:click={() => openDeckSelector('player')}>덱 선택하기</button>
-              {/if}
-            </div>
-
-            <div class="opponent-deck-selector" style="display: flex; gap: 10px; align-items: center;">
-              <span>상대방 덱:</span>
-              {#if opponentSelectedDeckName}
-                  <div class="deck-info" style="padding: 5px 10px; background-color: #e3f2fd; border-radius: 4px; font-size: 0.9rem; border: 1px solid #bbdefb;">
-                      <strong>{opponentSelectedDeckName}</strong>
-                  </div>
-                  <button class="secondary" on:click={() => openDeckSelector('opponent')}>다른 덱 선택</button>
-              {:else}
-                  <button class="primary" on:click={() => openDeckSelector('opponent')}>덱 선택하기</button>
-              {/if}
-            </div>
-
-            <button
-              style="margin-top: 10px;"
-              on:click={startGame}
-              disabled={playerSelectedDeckIndex === -1 || opponentSelectedDeckIndex === -1}
-              class:primary={playerSelectedDeckIndex !== -1 && opponentSelectedDeckIndex !== -1}
-            >
-              Start Game
-            </button>
-          </div>
-        {:else}
-          <button on:click={automaticPhaseProgress}>Next Phase</button>
-        {/if}
+    
+    <div class="center-play-area">
+      
+      <div class="opponent-main-zones">
+        <div class="opponent-zones-rotated">
+           
+            <PhaseCounter gridArea="phase" />
+            <RebirthZone player="opponent" gridArea="rebirth" />
+            <EntryZone player="opponent" gridArea="entry" />
+            <button class="entry-in-button" on:click={movePlayerDeckToEntry}>엔트리 인</button>
+            <Deck player="opponent" gridArea="deck" />
+            <MemberZone player="opponent" gridArea="member" />
+            <WaitingZone player="opponent" gridArea="waiting" />
+            <EnergyZone player="opponent" gridArea="energy" />
+            <PartnerZone player="opponent" gridArea="partner" />
+            <HandZone player="opponent" gridArea="hand" />
+           
         </div>
+      </div>
+
+     
+      <div class="field-divider"></div>
+
+    
+      <div class="player-main-zones">
+          
+          <PhaseCounter gridArea="phase" />
+          <RebirthZone player="player" gridArea="rebirth" />
+          <EntryZone player="player" gridArea="entry" />
+          <button class="entry-in-button" on:click={movePlayerDeckToEntry}>엔트리 인</button>
+          <Deck player="player" gridArea="deck" />
+          <MemberZone player="player" gridArea="member" />
+          <WaitingZone player="player" gridArea="waiting" />
+          <EnergyZone player="player" gridArea="energy" />
+          <PartnerZone player="player" gridArea="partner" />
+          <HandZone player="player" gridArea="hand" />
+         
+
+         {#if !$game_playing}
+         <div class="deck-selection-area" style="margin-top: 10px; padding: 10px; border: 1px solid #eee; border-radius: 5px; background-color: #f9f9f9;">
+          
+          <div class="player-deck-selector" style="display: flex; gap: 10px; align-items: center; margin-bottom: 10px;">
+            <span>플레이어 덱:</span>
+            {#if playerSelectedDeckName}
+                <div class="deck-info" style="padding: 5px 10px; background-color: #e3f2fd; border-radius: 4px; font-size: 0.9rem; border: 1px solid #bbdefb;">
+                    <strong>{playerSelectedDeckName}</strong>
+                </div>
+                <button class="secondary" on:click={() => openDeckSelector('player')}>다른 덱 선택</button>
+            {:else}
+                <button class="primary" on:click={() => openDeckSelector('player')}>덱 선택하기</button>
+            {/if}
+          </div>
+
+          
+          <div class="opponent-deck-selector" style="display: flex; gap: 10px; align-items: center;">
+            <span>상대방 덱:</span>
+            {#if opponentSelectedDeckName}
+                <div class="deck-info" style="padding: 5px 10px; background-color: #e3f2fd; border-radius: 4px; font-size: 0.9rem; border: 1px solid #bbdefb;">
+                    <strong>{opponentSelectedDeckName}</strong>
+                </div>
+                <button class="secondary" on:click={() => openDeckSelector('opponent')}>다른 덱 선택</button>
+            {:else}
+                <button class="primary" on:click={() => openDeckSelector('opponent')}>덱 선택하기</button>
+            {/if}
+          </div>
+
+          
+          <button
+            style="margin-top: 10px;"
+            on:click={startGame}
+            disabled={playerSelectedDeckIndex === -1 || opponentSelectedDeckIndex === -1}
+            class:primary={playerSelectedDeckIndex !== -1 && opponentSelectedDeckIndex !== -1}
+          >
+            Start Game
+          </button>
+        </div>
+         {:else}
+         <button class="next-phase-button" on:click={automaticPhaseProgress}>
+          Next Phase
+        </button>
+         {/if}
+      </div>
     </div>
-  </div>
+
+   
+    <div class="opponent-retire-area">
+      <RetireZone player="opponent" />
+    </div>
+
+  </div> 
 
   {#if showDeckSelector}
     <div class="modal-overlay" on:click|self={resetModalSelection}> <div class="deck-selector-modal">
@@ -576,6 +541,7 @@ button:hover {
           </div>
         {/if}
 
+      
         <div class="modal-buttons">
           <button
               class="primary"

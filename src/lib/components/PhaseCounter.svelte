@@ -1,6 +1,6 @@
 <script lang="ts">
     import { current_phase } from "$lib/engine/GameManager";
-
+    export let gridArea: string | undefined = undefined;
     function phaseCheck() {
         if ($current_phase === 0) {
             return "End Phase";
@@ -14,6 +14,6 @@
     }
 </script>
 
-<div>
+<div class="phase-counter-component"style={gridArea ? `grid-area: ${gridArea};` : ''}>
     <h3>{phaseCheck()}</h3>
 </div>

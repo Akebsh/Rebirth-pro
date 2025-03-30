@@ -1,8 +1,9 @@
 <script lang="ts">
     import { entry_store , opponent_entry_store} from "$lib/engine/CardStore";
     import Card from "./Card.svelte";
-    import type { Card as CardType } from '../../routes/game/types';
+    import type { Card as CardType } from '$lib/engine/CardManager'; 
 
+    export let gridArea: string | undefined = undefined;
     // ✅ player prop을 선언합니다. 기본값은 'player'
   export let player: 'player' | 'opponent' | undefined = 'player';
 
@@ -22,8 +23,8 @@ $: entry_card = $zoneStore[0] as CardType | undefined; // 타입 단언 추가
 
 <style>
     .entry {
-        margin: 20px;
-        padding: 15px;
+        
+        padding: 10px;
         border-radius: 10px;
         border: 2px solid #444;
         background: linear-gradient(135deg, #222, #444);
@@ -54,7 +55,7 @@ $: entry_card = $zoneStore[0] as CardType | undefined; // 타입 단언 추가
     }
 </style>
 
-<div class="entry">
+<div class="entry entry-zone-component"style={gridArea ? `grid-area: ${gridArea};` : ''}> 
     <h3>{player === 'opponent' ? 'Opponent Entry' : 'Entry'}</h3>
     <div class="entry-container">
         <div class="entry-slot">

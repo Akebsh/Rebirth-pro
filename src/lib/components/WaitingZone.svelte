@@ -2,9 +2,9 @@
     // ✅ 상대방 스토어 import (CardStore.ts에 정의 필요)
     import { waiting_store, opponent_waiting_store } from "$lib/engine/CardStore";
     import Card from "./Card.svelte";
-    import type { Card as CardType } from '../../routes/game/types'; // 타입 경로 확인
+    import type { Card as CardType } from '$lib/engine/CardManager';  // 타입 경로 확인
     import { get } from "svelte/store";
-  
+    export let gridArea: string | undefined = undefined;
     // ✅ player prop 선언
     export let player: 'player' | 'opponent' | undefined = 'player';
   
@@ -37,8 +37,8 @@
 
 <style>
     .waiting {
-        margin: 20px;
-        padding: 15px;
+        
+        padding: 10px;
         border-radius: 10px;
         border: 2px solid #444;
         background: linear-gradient(135deg, #222, #444);
@@ -148,22 +148,23 @@
     }
 </style>
 
-<div class="waiting" on:contextmenu={handleContextMenu}>
+<div class="waiting waiting-zone-component"style={gridArea ? `grid-area: ${gridArea};` : ''} on:contextmenu={handleContextMenu}>
     <h3>{player === 'opponent' ? 'Opponent Waiting' : 'Waiting'} ({cards.length})</h3>
     <div class="waiting-container">
         <div class="cards-stack">
             {#if cards.length > 0}
-                {#each cards.slice(-5) as card, i (card.serial_number)}
+                {#each cards.slice(-5) as card, i (card.id)}
                     <div class="card-wrapper" style="transform: translateY({i * 1}px) translateX({i * 1}px); z-index: {i};">
                         <Card card_data={card} />
                     </div>
                 {/each}
-                {:else}
-                <div class="waiting-slot" /> {/if}
+            {:else}
+                <div class="waiting-slot" />
+            {/if}
         </div>
     </div>
   </div>
-  
+
   {#if showPopup}
       <div class="popup"
            style="left: {popupX}px; top: {popupY}px">
@@ -177,3 +178,4 @@
           </div>
       </div>
       {/if}
+      <svelte:window on:click={closePopup} />

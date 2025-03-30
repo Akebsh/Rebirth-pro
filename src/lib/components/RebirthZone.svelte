@@ -2,8 +2,8 @@
     // ✅ 상대방 스토어 import (CardStore.ts에 정의 필요)
     import { rebirth_store, opponent_rebirth_store } from "$lib/engine/CardStore";
     import Card from "./Card.svelte";
-    import type { Card as CardType } from '../../routes/game/types'; // 타입 경로 확인
-  
+    import type { Card as CardType } from '$lib/engine/CardManager';  // 타입 경로 확인
+    export let gridArea: string | undefined = undefined;
     // ✅ player prop 선언
     export let player: 'player' | 'opponent' | undefined = 'player';
   
@@ -15,8 +15,8 @@
 
 <style>
     .rebirth {
-        margin: 20px;
-        padding: 15px;
+        
+        padding: 10px;
         border-radius: 10px;
         border: 2px solid #444;
         background: linear-gradient(135deg, #222, #444);
@@ -42,15 +42,15 @@
     }
 </style>
 
-<div class="rebirth">
+<div class="rebirth rebirth-zone-component"style={gridArea ? `grid-area: ${gridArea};` : ''}>
     <h3>{player === 'opponent' ? 'Opponent Re-Birth' : 'Re-Birth'} ({cards.length})</h3>
     <div class="rebirth-container">
         {#if cards.length > 0}
-            {#each cards as card (card.serial_number)}
+            {#each cards as card (card.id)}
                 <Card card_data={card}></Card>
             {/each}
         {:else}
-             <div style="width: 126px; height: 176px; border: 2px dashed #666; border-radius: 9px; display: flex; justify-content: center; align-items: center; background: rgba(255, 255, 255, 0.1);"></div>
+             <div style="width: 126px; height: 176px; border: 2px dashed #666; ..."></div>
         {/if}
     </div>
   </div>

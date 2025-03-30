@@ -2,8 +2,9 @@
     // ✅ 상대방 핸드 스토어 import (CardStore.ts에 정의 필요)
     import { hand_store, opponent_hand_store } from "$lib/engine/CardStore";
     import Card from "./Card.svelte";
-    import type { Card as CardType } from '../../routes/game/types'; // 타입 경로 확인
+    import type { Card as CardType } from '$lib/engine/CardManager';  // 타입 경로 확인
   
+    export let gridArea: string | undefined = undefined;
     // ✅ player prop 선언
     export let player: 'player' | 'opponent' | undefined = 'player';
   
@@ -18,8 +19,8 @@
 
 <style>
  .hand {
-    margin: -50px 20px 20px 20px; /* 위쪽으로 50px 튀어나오게 설정 */
-    padding: 20px;
+    
+    padding: 10px;
     border-radius: 15px;
     border: 3px solid #333;
     background: linear-gradient(135deg, #111, #333);
@@ -46,17 +47,17 @@
 
 </style>
 
-<div class="hand">
-  <h3>{player === 'opponent' ? 'Opponent Hand' : 'Hand'} ({cards.length})</h3>
-  <div class="hand-container">
-    {#if cards.length > 0}
-       {#each cards as card (card.serial_number)}
-          {#if player === 'opponent'}
-             <Card card_data={card}></Card>
-          {:else}
-             <Card card_data={card}></Card>
-          {/if}
-       {/each}
-    {/if}
+<div class="hand hand-zone-component"style={gridArea ? `grid-area: ${gridArea};` : ''}> 
+    <h3>{player === 'opponent' ? 'Opponent Hand' : 'Hand'} ({cards.length})</h3>
+    <div class="hand-container">
+        {#if cards.length > 0}
+           {#each cards as card (card.id)}
+              {#if player === 'opponent'}
+                 <img src="/rebirthBack.png" alt="Opponent Card" class="opponent-card-back" />
+              {:else}
+                 <Card card_data={card}></Card>
+              {/if}
+           {/each}
+        {/if}
+    </div>
   </div>
-</div>

@@ -2,8 +2,8 @@
     // ✅ 상대방 스토어 import (CardStore.ts에 정의 필요)
     import { retire_store, opponent_retire_store } from "$lib/engine/CardStore";
     import Card from "./Card.svelte";
-    import type { Card as CardType } from '../../routes/game/types'; // 타입 경로 확인
-  
+    import type { Card as CardType } from '$lib/engine/CardManager';  // 타입 경로 확인
+    export let gridArea: string | undefined = undefined;
     // ✅ player prop 선언
     export let player: 'player' | 'opponent' | undefined = 'player';
   
@@ -15,7 +15,7 @@
 
 <style>
     .retire {
-        margin: 20px;
+       
         padding: 15px;
         border-radius: 10px;
         border: 2px solid #444;
@@ -58,17 +58,17 @@
 }
 </style>
 
-<div class="retire">
-  <h3>{player === 'opponent' ? 'Opponent Retire' : 'Retire'} ({cards.length})</h3>
-  <div class="retire-container">
-      {#if cards.length > 0}
-          {#each cards as card, i (card.serial_number)}
-              <div class="card-component-wrapper" style="--card-index: {cards.length - i};">
-                 <Card card_data={card}></Card>
-              </div>
-          {/each}
-      {:else}
-           <div style="color: #888; margin-top: 20px;">Empty</div>
-      {/if}
+<div class="retire retire-zone-component"style={gridArea ? `grid-area: ${gridArea};` : ''}>
+    <h3>{player === 'opponent' ? 'Opponent Retire' : 'Retire'} ({cards.length})</h3>
+    <div class="retire-container">
+        {#if cards.length > 0}
+            {#each cards as card, i (card.id)}
+                <div class="card-component-wrapper" style="--card-index: {cards.length - i};">
+                   <Card card_data={card}></Card>
+                </div>
+            {/each}
+        {:else}
+            <div style="color: #888; margin-top: 20px;">Empty</div>
+        {/if}
+    </div>
   </div>
-</div>

@@ -2,8 +2,9 @@
     // ✅ 상대방 에너지 스토어 import (CardStore.ts에 정의 필요)
     import { energy_store, opponent_energy_store } from "$lib/engine/CardStore";
     import Card from "./Card.svelte";
-    import type { Card as CardType } from '../../routes/game/types'; // 타입 경로 확인
+    import type { Card as CardType } from '$lib/engine/CardManager';  // 타입 경로 확인
   
+    export let gridArea: string | undefined = undefined;
     // ✅ player prop 선언
     export let player: 'player' | 'opponent' | undefined = 'player';
   
@@ -15,8 +16,8 @@
 
 <style>
     .energy {
-        margin: 20px;
-        padding: 15px;
+        
+        padding: 10px;
         border-radius: 10px;
         border: 2px solid #444;
         background: linear-gradient(135deg, #222, #444);
@@ -42,13 +43,13 @@
     }
 </style>
 
-<div class="energy">
-  <h3>{player === 'opponent' ? 'Opponent Energy' : 'Energy'} ({cards.length})</h3>
-  <div class="energy-container">
-      {#if cards.length > 0}
-          {#each cards as card (card.serial_number)}
-              <Card card_data={card}></Card>
-          {/each}
-      {/if}
+<div class="energy energy-zone-component"style={gridArea ? `grid-area: ${gridArea};` : ''}> 
+    <h3>{player === 'opponent' ? 'Opponent Energy' : 'Energy'} ({cards.length})</h3>
+    <div class="energy-container">
+        {#if cards.length > 0}
+            {#each cards as card (card.id)}
+                <Card card_data={card}></Card>
+            {/each}
+        {/if}
+    </div>
   </div>
-</div>

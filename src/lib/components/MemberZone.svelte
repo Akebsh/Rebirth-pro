@@ -2,8 +2,9 @@
     // ✅ 상대방 멤버 스토어 import (CardStore.ts에 정의 필요)
     import { member_store, opponent_member_store } from "$lib/engine/CardStore";
     import Card from "./Card.svelte";
-    import type { Card as CardType } from '../../routes/game/types'; // 타입 경로 확인
-  
+    import type { Card as CardType } from '$lib/engine/CardManager'; // 타입 경로 확인
+    
+    export let gridArea: string | undefined = undefined;
     // ✅ player prop 선언
     export let player: 'player' | 'opponent' | undefined = 'player';
   
@@ -19,8 +20,8 @@
 
 <style>
     .member {
-        margin: 20px;
-        padding: 15px;
+       
+        padding: 10px;
         border-radius: 10px;
         border: 2px solid #444;
         background: linear-gradient(135deg, #222, #444);
@@ -54,23 +55,11 @@
     }
 </style>
 
-<div class="member">
-  <h3>{player === 'opponent' ? 'Opponent Member' : 'Member'}</h3>
-  <div class="member-container">
-      <div class="member-slot">
-          {#if member1}
-              <Card card_data={member1} />
-          {/if}
-      </div>
-      <div class="member-slot">
-          {#if member2}
-              <Card card_data={member2} />
-          {/if}
-      </div>
-      <div class="member-slot">
-          {#if member3}
-              <Card card_data={member3} />
-          {/if}
-      </div>
+<div class="member member-zone-component"style={gridArea ? `grid-area: ${gridArea};` : ''}> 
+    <h3>{player === 'opponent' ? 'Opponent Member' : 'Member'}</h3>
+    <div class="member-container">
+        <div class="member-slot">{#if member1}<Card card_data={member1} />{/if}</div>
+        <div class="member-slot">{#if member2}<Card card_data={member2} />{/if}</div>
+        <div class="member-slot">{#if member3}<Card card_data={member3} />{/if}</div>
+    </div>
   </div>
-</div>

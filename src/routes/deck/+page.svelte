@@ -1,7 +1,7 @@
 <script lang="ts">
     import { onMount } from 'svelte';
     import { cardList } from '$lib/engine/CardList';
-    import type { Card } from './types';
+    import type { Card } from '$lib/engine/CardManager';
     import VirtualList from 'svelte-virtual-list';
 
     interface Deck {
@@ -24,6 +24,14 @@
     let savedDecks: Deck[] = [];
 
 
+
+
+
+
+
+
+
+    
     // 페이지네이션 추가
   let currentPage = 1;
   const pageSize = 10;

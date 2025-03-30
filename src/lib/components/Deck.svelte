@@ -3,8 +3,9 @@
     // ✅ 플레이어 및 상대방 덱 스토어 import (CardStore.ts에 opponent_deck_store 정의 필요)
     import { deck_store, opponent_deck_store } from "$lib/engine/CardStore";
     import { get } from "svelte/store";
-    import type { Card } from '../../routes/game/types'; // 타입 경로 확인
+    '$lib/engine/CardManager' // 타입 경로 확인
   
+    
     // ✅ player prop (기존에 추가됨)
     export let player: 'player' | 'opponent' | undefined = 'player';
   
@@ -15,6 +16,9 @@
     // ✅ 선택된 스토어의 카드 개수 표시
     $: deckCount = $zoneStore.length;
   
+
+    export let gridArea: string | undefined = undefined;
+
     // ✅ 플레이어 덱 클릭 시에만 카드 드로우 실행
     function handleDeckClick() {
         if (player === 'player' || player === undefined) { // 플레이어 덱일 경우에만
@@ -28,7 +32,6 @@
 
 <style>
     .deck {
-        margin: 20px;
         width: 126px;
         height: 176px;
         border: 2px solid #42d86f;
@@ -63,7 +66,7 @@
 </div>
 
 <!-- 덱 클릭 시 handleDeckClick 실행 -->
-<div class="deck" class:opponent-deck={player === 'opponent'} on:click={handleDeckClick}>
+<div class="deck deck-component"style={gridArea ? `grid-area: ${gridArea};` : ''} class:opponent-deck={player === 'opponent'} on:click={handleDeckClick}> 
     <span>DECK</span>
     <div class="deck-counter">{deckCount}</div>
 </div>
