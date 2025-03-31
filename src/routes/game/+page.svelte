@@ -18,6 +18,10 @@
     import { v4 as uuidv4 } from 'uuid';
     import type { CardInstance } from '$lib/engine/CardManager';
 
+    import { hand_store, opponent_deck_store, opponent_entry_store, opponent_hand_store } from '$lib/engine/CardStore'; // 경로 확인
+    import { getCardDefinition } from '$lib/data/cardDatabase'; // 경로 확인
+
+
    // DeckEntry 타입 정의 (이건 이미 있을 것)
 interface DeckEntry {
   serial_number: string;
@@ -29,10 +33,11 @@ interface DeckData { // 저장/로드 시 사용될 타입
   name: string;
   cards: DeckEntry[]; // ★★★ CardInstance[] 가 아니라 DeckEntry[] 로 수정! ★★★
   createdAt?: string;
+  firstEntrySerial: string | null;
 }
 
      // --- 상태 변수 ---
-     let savedDecks: DeckData[] = [];
+    let savedDecks: DeckData[] = [];
     let showDeckSelector = false;
     let selectingFor: 'player' | 'opponent' | null = null;
     let tempSelectedDeckIndex: number | null = null;
@@ -98,6 +103,8 @@ interface DeckData { // 저장/로드 시 사용될 타입
         resetModalSelection(); // 모달 닫기
     }
 
+    
+
     function createDeckCards(savedDeckEntries: DeckEntry[]): CardInstance[] { // Rename input param for clarity
     const newDeck: CardInstance[] = [];
     console.log("createDeckCards input:", savedDeckEntries); // Debug Input
@@ -158,30 +165,52 @@ interface DeckData { // 저장/로드 시 사용될 타입
     }
 
    // /game/+page.svelte 스크립트 내부
-function startGame(): void {
-    if (playerSelectedDeckIndex === -1 || opponentSelectedDeckIndex === -1) { /* ... */ return; }
+   function startGame(): void {
+    if (playerSelectedDeckIndex === -1 || opponentSelectedDeckIndex === -1) {
+        alert('플레이어와 상대방의 덱을 모두 선택해주세요.');
+        return;
+    }
 
-    const playerDeckDefinitionList = savedDecks[playerSelectedDeckIndex].cards; // 53장 분량의 DeckEntry[]
-    const opponentDeckDefinitionList = savedDecks[opponentSelectedDeckIndex].cards; // 53장 분량의 DeckEntry[]
+    // 1. 저장된 덱 데이터 가져오기 (Deck 타입 사용)
+    const playerDeckData = savedDecks[playerSelectedDeckIndex];
+    const opponentDeckData = savedDecks[opponentSelectedDeckIndex];
 
-    if (!playerDeckDefinitionList || !opponentDeckDefinitionList) { /* ... */ return; }
+    if (!playerDeckData || !opponentDeckData || !playerDeckData.cards || !opponentDeckData.cards) {
+        alert('선택된 덱의 카드 목록 정보를 불러올 수 없습니다.');
+        return;
+    }
 
-    // 53장 덱 기준으로 CardInstance 생성
-    const playerDeckInstances = createDeckCards(playerDeckDefinitionList);
-    const opponentDeckInstances = createDeckCards(opponentDeckDefinitionList);
+    // ★★★ 2. 지정된 첫 엔트리 시리얼 번호 가져오기! ★★★
+    const playerFirstEntrySerial = playerDeckData.firstEntrySerial;
+    const opponentFirstEntrySerial = opponentDeckData.firstEntrySerial;
 
-    // 53장 덱 셔플
+    // ★★★ null 체크 (첫 엔트리가 반드시 지정되어야 함) ★★★
+    if (!playerFirstEntrySerial || !opponentFirstEntrySerial) {
+        alert("플레이어 또는 상대방 덱에 첫 엔트리가 지정되지 않았습니다! 덱 빌더에서 지정해주세요.");
+        return;
+    }
+
+    // (만약 50+3 분리 방식이면 여기서 파트너 시리얼도 가져와야 함)
+    // const playerPartnerSerials = playerDeckData.partnerSerials || [];
+    // const opponentPartnerSerials = opponentDeckData.partnerSerials || [];
+
+    // 3. CardInstance 배열 생성 및 셔플 (53장 덱 기준)
+    const playerDeckInstances = createDeckCards(playerDeckData.cards); // DeckEntry[] 전달
+    const opponentDeckInstances = createDeckCards(opponentDeckData.cards);
+
     const playerShuffledDeck = shuffleDeck(playerDeckInstances);
     const opponentShuffledDeck = shuffleDeck(opponentDeckInstances);
     console.log(`플레이어 덱 ${playerShuffledDeck.length}장, 상대 덱 ${opponentShuffledDeck.length}장 준비 완료.`);
 
-    // 플레이어 덱 스토어에 53장 설정
+    // 4. 플레이어 덱 스토어 설정 (53장)
     deck_store.set(playerShuffledDeck);
     console.log("플레이어 deck_store 설정 완료.");
 
-    // GameManager의 gameStart에는 상대방의 섞인 53장 덱만 전달!
-    console.log(`상대방 덱 정보를 GameManager로 전달하며 게임 시작!`);
-    gameStart(opponentShuffledDeck); // ★★★ 상대방 53장 덱만 전달! ★★★
+    // 5. GameManager의 gameStart 호출 시 첫 엔트리 시리얼 번호 전달!
+    console.log(`첫 엔트리 정보 포함하여 GameManager로 전달하며 게임 시작!`);
+    // ▼▼▼ 인자 추가! ▼▼▼
+    gameStart(opponentShuffledDeck, playerFirstEntrySerial, opponentFirstEntrySerial);
+    // ▲▲▲ (만약 파트너 로직도 있다면: gameStart(opponentShuffledDeck, playerPartnerSerials, opponentPartnerSerials, playerFirstEntrySerial, opponentFirstEntrySerial); )
 }
     // 컴포넌트 마운트 시 저장된 덱 로드 (기존과 동일)
     onMount(() => {
@@ -536,21 +565,24 @@ button:hover {
             <a href="/deck" class="deck-builder-link">덱 빌더로 이동</a>
           </div>
         {:else}
-          <div class="deck-list">
-            {#each savedDecks as deck, index}
-              <div
-                class="deck-item"
-                class:temp-selected={tempSelectedDeckIndex === index} 
-                on:click={() => tempSelectedDeckIndex = index} 
-              >
-                <h3>{deck.name}</h3>
-                <div class="deck-stats">
-                  <p>카드 수: {deck.cards.length}</p>
-                  <p>생성일: {deck.createdAt ? new Date(deck.createdAt).toLocaleDateString() : 'N/A'}</p>
-                </div>
+        <div class="deck-list">
+          {#each savedDecks as deck, index (deck.createdAt + deck.name)} 
+            <div
+              class="deck-item"
+              class:temp-selected={tempSelectedDeckIndex === index}
+              on:click={() => tempSelectedDeckIndex = index}
+            >
+              <h3>{deck.name}</h3>
+              <div class="deck-stats">
+                
+                
+                <p>카드 수: {deck.cards.reduce((sum, entry) => sum + (entry.count || 0), 0)} / 53</p>
+                
+                <p>생성일: {deck.createdAt ? new Date(deck.createdAt).toLocaleDateString() : 'N/A'}</p>
               </div>
-            {/each}
-          </div>
+            </div>
+          {/each}
+        </div>
         {/if}
 
       

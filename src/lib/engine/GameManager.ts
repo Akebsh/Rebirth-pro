@@ -17,6 +17,11 @@ export enum GAME_PHASE {
   MAIN = 3,
 }
 
+interface DeckEntry {
+  serial_number: string;
+  count: number;
+}
+
 export let game_playing = writable(false);
 export let current_phase = writable(GAME_PHASE.END);
 
@@ -101,120 +106,108 @@ export let current_phase = writable(GAME_PHASE.END);
     }),
   ]);
 } */
-export function gameStart(opponentFullDeckShuffled: CardInstance[]): boolean {
-  // ★ 53장 덱 받음
-
-  // === 초기 덱 유효성 검사 ===
+export function gameStart(
+  opponentFullDeckShuffled: CardInstance[], // ★ 인자 이름 명확하게
+  playerFirstEntrySerial: string,
+  opponentFirstEntrySerial: string
+  // partnerSerials 인자는 이제 사용 안 함 (53장 방식이므로)
+): boolean {
+  // === 플레이어 설정 ===
   const playerFullDeck = get(deck_store);
   if (playerFullDeck.length !== 53) {
-    console.error(`플레이어 덱 매수 오류: ${playerFullDeck.length} / 53`);
-    // TODO: 게임 시작 불가 처리
-    return false;
-  }
-  if (opponentFullDeckShuffled.length !== 53) {
-    console.error(
-      `상대방 덱 매수 오류: ${opponentFullDeckShuffled.length} / 53`
-    );
-    // TODO: 게임 시작 불가 처리
+    console.error("플레이어 덱 53장 아님!");
     return false;
   }
 
-  // === 플레이어 설정 ===
-  let playerCurrentDeck = [...playerFullDeck]; // 작업용 복사본
-  const playerPartners: CardInstance[] = [];
-  const playerMainDeck: CardInstance[] = [];
-
-  // 1. 플레이어 파트너 3장 분리
-  playerCurrentDeck.forEach((instance) => {
+  // 1. 파트너 찾기 (filter 사용)
+  const playerPartners: CardInstance[] = playerFullDeck.filter((instance) => {
     const def = getCardDefinition(instance.serial_number);
-    // ★★★ subtype이 아니라 type으로 체크! ★★★
-    if (def?.type === "partner" && playerPartners.length < 3) {
-      playerPartners.push(instance);
-    } else {
-      playerMainDeck.push(instance); // 나머지는 메인 덱 후보
-    }
+    return def?.type === "partner";
   });
-
   if (playerPartners.length !== 3) {
-    console.error(`플레이어 덱 파트너 수 오류: ${playerPartners.length} / 3`);
-    // TODO: 게임 시작 불가 처리
+    console.error("플레이어 파트너 3장 아님!");
     return false;
   }
-  if (playerMainDeck.length !== 50) {
-    // 53 - 3 = 50 확인
-    console.error(`플레이어 메인 덱 매수 오류: ${playerMainDeck.length} / 50`);
-    return false;
-  }
-  console.log(
-    "플레이어 파트너 분리 완료:",
-    playerPartners.map((p) => p.serial_number)
-  );
+  console.log("Player partners found:", playerPartners.length);
 
-  // 2. 플레이어 메인 덱에서 3장 드로우
+  // 2. 메인 덱 만들기 (filter 사용, ★★★ let으로 선언! ★★★)
+  let playerMainDeck: CardInstance[] = playerFullDeck.filter((instance) => {
+    const def = getCardDefinition(instance.serial_number);
+    return def?.type !== "partner"; // 파트너가 아닌 카드만 포함
+  });
+  if (playerMainDeck.length !== 50) {
+    console.error("플레이어 메인 덱 50장 아님!");
+    return false;
+  }
+  console.log("Player main deck created:", playerMainDeck.length);
+
+  // 3. 핸드 드로우 (playerMainDeck이 let이므로 pop 가능!)
   const playerDraw: CardInstance[] = [];
   for (let i = 0; i < 3; i++) {
-    playerDraw.push(playerMainDeck.pop()!); // pop으로 맨 뒤(위) 카드 가져옴
+    playerDraw.push(playerMainDeck.pop()!); // pop으로 수정 가능
   }
-  console.log("플레이어 3장 드로우 완료");
+  console.log("Player 3 cards drawn");
 
-  // 3. 플레이어 시작 핸드 설정 (파트너 3 + 드로우 3 = 6장)
+  // 4. 시작 핸드 설정 (파트너 3 + 드로우 3)
   playerPartners.forEach((p) => (p.zone = "hand"));
   playerDraw.forEach((d) => (d.zone = "hand"));
   hand_store.set([...playerPartners, ...playerDraw]);
-  console.log("플레이어 시작 핸드 설정 완료:", get(hand_store).length);
+  console.log("Player starting hand set:", get(hand_store).length);
 
-  // 4. 플레이어 첫 엔트리 배치 (남은 메인 덱 47장에서 찾기)
-  const playerFirstEntryIndex = playerMainDeck.findIndex((instance) => {
-    const def = getCardDefinition(instance.serial_number);
-    return def?.is_first_entry ?? false;
-  });
+  // 5. 첫 엔트리 배치 (남은 메인 덱 47장에서 찾고 splice로 수정 가능!)
+  const playerFirstEntryIndex = playerMainDeck.findIndex(
+    (instance) => instance.serial_number === playerFirstEntrySerial
+  );
   if (playerFirstEntryIndex !== -1) {
-    const [playerFirstEntry] = playerMainDeck.splice(playerFirstEntryIndex, 1);
+    const [playerFirstEntry] = playerMainDeck.splice(playerFirstEntryIndex, 1); // splice로 수정 가능
     playerFirstEntry.zone = "entry";
     entry_store.set([playerFirstEntry]);
-    const def = getCardDefinition(playerFirstEntry.serial_number);
-    console.log(
-      `플레이어 첫 엔트리 배치: ${def?.name ?? playerFirstEntry.serial_number}`
-    );
+    // ... 로그 ...
+    console.log("Player first entry set.");
   } else {
-    console.warn("플레이어 메인 덱에 첫 엔트리 카드가 없습니다.");
-    entry_store.set([]); // 엔트리 비우기
+    console.error(`지정된 플레이어 첫 엔트리(${playerFirstEntrySerial}) 없음!`);
+    entry_store.set([]);
+    return false;
   }
 
-  // 5. 플레이어 최종 덱 설정 (남은 46장)
+  // 6. 최종 덱 설정 (남은 46장)
   deck_store.set(playerMainDeck);
-  console.log("플레이어 최종 덱 설정 완료:", get(deck_store).length);
+  console.log("Player final deck set:", get(deck_store).length);
 
-  // === 상대방 설정 (플레이어와 동일한 로직 적용) ===
-  let opponentCurrentDeck = [...opponentFullDeckShuffled]; // 작업용 복사본
-  const opponentPartners: CardInstance[] = [];
-  const opponentMainDeck: CardInstance[] = [];
+  // === 상대방 설정 (플레이어와 동일하게, ★★★ opponentMainDeck도 let으로 선언! ★★★) ===
+  if (opponentFullDeckShuffled.length !== 53) {
+    /* ...오류 처리... */ return false;
+  }
 
-  // 1. 상대방 파트너 3장 분리
-  opponentCurrentDeck.forEach((instance) => {
-    const def = getCardDefinition(instance.serial_number);
-    if (def?.type === "partner" && opponentPartners.length < 3) {
-      opponentPartners.push(instance);
-    } else {
-      opponentMainDeck.push(instance);
+  const opponentPartners: CardInstance[] = opponentFullDeckShuffled.filter(
+    (instance) => {
+      const def = getCardDefinition(instance.serial_number); // 플레이어 로직 참고!
+      return def?.type === "partner";
     }
-  });
+  );
   if (opponentPartners.length !== 3) {
-    /* 오류 처리 */ return false;
+    /* ...오류 처리... */ return false;
   }
-  if (opponentMainDeck.length !== 50) {
-    /* 오류 처리 */ return false;
-  }
-  console.log("상대방 파트너 분리 완료");
 
-  // 2. 상대방 메인 덱에서 3장 드로우
+  // ★★★ let으로 선언! ★★★
+  let opponentMainDeck: CardInstance[] = opponentFullDeckShuffled.filter(
+    (instance) => {
+      const def = getCardDefinition(instance.serial_number); // 플레이어 로직 참고!
+      return def?.type !== "partner";
+    }
+  );
+  if (opponentMainDeck.length !== 50) {
+    /* ...오류 처리... */ return false;
+  }
+  console.log("Opponent main deck created:", opponentMainDeck.length);
+
   const opponentDraw: CardInstance[] = [];
   for (let i = 0; i < 3; i++) {
-    opponentDraw.push(opponentMainDeck.pop()!);
+    opponentDraw.push(opponentMainDeck.pop()!); // OK
   }
-  console.log("상대방 3장 드로우 완료");
+  console.log("Opponent 3 cards drawn");
 
-  // 3. 상대방 시작 핸드 설정 (파트너 3 + 드로우 3 = 6장, 모두 flipped)
+  // ... (상대방 핸드 설정, flipped=true 잊지 말 것!) ...
   opponentPartners.forEach((p) => {
     p.zone = "hand";
     p.state.is_flipped = true;
@@ -224,34 +217,34 @@ export function gameStart(opponentFullDeckShuffled: CardInstance[]): boolean {
     d.state.is_flipped = true;
   });
   opponent_hand_store.set([...opponentPartners, ...opponentDraw]);
-  console.log("상대방 시작 핸드 설정 완료:", get(opponent_hand_store).length);
+  console.log("Opponent starting hand set:", get(opponent_hand_store).length);
 
-  // 4. 상대방 첫 엔트리 배치 (남은 메인 덱 47장에서 찾기)
-  const opponentFirstEntryIndex = opponentMainDeck.findIndex((instance) => {
-    const def = getCardDefinition(instance.serial_number);
-    return def?.is_first_entry ?? false;
-  });
+  // ... (상대방 첫 엔트리 배치, ★ opponentMainDeck에서 splice 사용!) ...
+  const opponentFirstEntryIndex = opponentMainDeck.findIndex(
+    (instance) => instance.serial_number === opponentFirstEntrySerial
+  );
   if (opponentFirstEntryIndex !== -1) {
     const [opponentFirstEntry] = opponentMainDeck.splice(
       opponentFirstEntryIndex,
       1
-    );
+    ); // OK
     opponentFirstEntry.zone = "entry";
     opponent_entry_store.set([opponentFirstEntry]);
-    console.log("상대방 첫 엔트리 배치 완료");
+    console.log("Opponent first entry set.");
   } else {
-    console.warn("상대방 메인 덱에 첫 엔트리 카드가 없습니다.");
+    console.error(`지정된 상대방 첫 엔트리(${opponentFirstEntrySerial}) 없음!`);
     opponent_entry_store.set([]);
+    return false;
   }
 
-  // 5. 상대방 최종 덱 설정 (남은 46장)
+  // ... (상대방 최종 덱 설정) ...
   opponent_deck_store.set(opponentMainDeck);
-  console.log("상대방 최종 덱 설정 완료:", get(opponent_deck_store).length);
+  console.log("Opponent final deck set:", get(opponent_deck_store).length);
 
   // --- 3. 게임 상태 업데이트 ---
   game_playing.set(true);
   nextPhase();
-  console.log("게임 시작 준비 완료! (53장 덱, 시작 핸드 6장)");
+  console.log("게임 시작 준비 완료!");
   return true;
 }
 
@@ -281,7 +274,7 @@ export async function automaticPhaseProgress() {
 
 // 저장된 덱 목록을 가져오는 store
 export const saved_decks_store = writable<
-  { name: string; cards: CardInstance[]; createdAt: string }[]
+  { name: string; cards: DeckEntry[]; createdAt: string }[] // ★ 타입 수정!
 >([]);
 
 // 현재 선택된 덱 ID를 저장하는 store

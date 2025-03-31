@@ -10,10 +10,12 @@
   }
   // 저장될 덱 데이터 타입
   interface Deck {
-    name: string;
-    cards: DeckEntry[]; // ★ 타입 변경!
-    createdAt: string;
-  }
+  name: string;
+  cards: DeckEntry[]; // 53장 메인 덱 정보 (또는 50장 + 파트너 분리 방식이면 mainDeckCards)
+  // partnerSerials: string[]; // 50+3 분리 방식일 경우 필요
+  firstEntrySerial?: string | null; // ★★★ 첫 엔트리 시리얼 번호 필드 추가! ★★★
+  createdAt: string;
+}
   let isLoading = false;
   let selectedCards: DeckEntry[] = []; // ★ 타입 변경! (현재 만들고 있는 덱)
   let searchTerm = '';
@@ -22,6 +24,8 @@
   let deckName = '새 덱';
   let savingStatus = '';
   let savedDecks: Deck[] = [];
+
+  let selectedFirstEntrySerial: string | null = null;
 
 
 // 1. cardDatabase에 의존 (가장 먼저 계산됨)
@@ -132,11 +136,17 @@ let displayedCards: [string, CardDefinition][] = [];
       alert('덱 이름을 입력해주세요.');
       return;
     }
-
-    const deckToSave: Deck = { // ★ Deck 타입 사용
-      name: deckName.trim(),
-      cards: selectedCards, // ★ 이제 DeckEntry[] 타입
-      createdAt: new Date().toISOString()
+    if (!selectedFirstEntrySerial) {
+        alert('첫 엔트리 카드를 지정해야 덱을 저장할 수 있습니다!');
+        return;
+    }
+    
+    const deckToSave: Deck = {
+    name: deckName.trim(),
+        cards: selectedCards, // DeckEntry[]
+        firstEntrySerial: selectedFirstEntrySerial, // ★★★ 이 부분이 포함되었는지 확인! ★★★
+        // partnerSerials: selectedPartnerSerials, // 파트너 분리 방식이면 이것도 확인
+        createdAt: new Date().toISOString()
     };
 
     try {
@@ -200,6 +210,25 @@ let displayedCards: [string, CardDefinition][] = [];
         savedDecks = [];
     }
   });
+
+
+  function setFirstEntry(serialNumber: string) {
+    const definition = getCardDefinition(serialNumber);
+
+    
+
+    // 지정 또는 해제
+    if (selectedFirstEntrySerial === serialNumber) {
+        selectedFirstEntrySerial = null; // 이미 선택된 거면 해제
+    } else {
+        selectedFirstEntrySerial = serialNumber; // 새로 지정
+    }
+    console.log("선택된 첫 엔트리:", selectedFirstEntrySerial);
+}
+
+
+
+
   </script>
   
   
@@ -480,6 +509,16 @@ let displayedCards: [string, CardDefinition][] = [];
     background-color: #455A64;
   }
 
+
+  .deck-card.is-first-entry {
+        outline: 3px solid gold;
+        box-shadow: 0 0 10px gold;
+    }
+    .fe-toggle-btn { /* 버튼 기본 스타일 리셋 필요 */
+        background: none; border: none; color: gold; font-size: 1.2em; cursor: pointer; padding: 0 5px;
+    }
+
+
   </style>
 
 <div class="deck-builder">
@@ -580,13 +619,26 @@ let displayedCards: [string, CardDefinition][] = [];
           {#each selectedCards as entry (entry.serial_number)}
             {@const cardDef = getCardDefinition(entry.serial_number)}
             {#if cardDef}
-              <div class="deck-card" on:click={() => removeCardFromDeck(entry.serial_number)} title={cardDef.description}>
-                <img src={cardDef.image_url} alt={cardDef.name} />
-                <div class="deck-card-overlay">
-                  <span class="card-name">{cardDef.name} (x{entry.count})</span>
-                  <span class="remove-card">제거</span>
-                </div>
-              </div>
+            <div
+            class="deck-card"
+            class:is-first-entry={entry.serial_number === selectedFirstEntrySerial} 
+            on:click={() => removeCardFromDeck(entry.serial_number)} 
+        >
+            <img src={cardDef.image_url} alt={cardDef.name} />
+            <div class="deck-card-overlay">
+                <span class="card-name">{cardDef.name} (x{entry.count})</span>
+                
+                <button
+                    class="fe-toggle-btn"
+                    title="첫 엔트리로 지정/해제"
+                    on:click|stopPropagation={() => setFirstEntry(entry.serial_number)} 
+                >
+                    {entry.serial_number === selectedFirstEntrySerial ? '★' : '☆'} 
+                </button>
+               
+                <span class="remove-card">제거</span>
+            </div>
+        </div>
             {/if}
           {/each}
         </div>
