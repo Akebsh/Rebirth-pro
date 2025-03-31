@@ -18,12 +18,18 @@
     import { v4 as uuidv4 } from 'uuid';
     import type { CardInstance } from '$lib/engine/CardManager';
 
-    // ✅ Deck 인터페이스 정의 (DeckComponent와 충돌 방지)
-    interface DeckData {
-        name: string;
-        cards: CardInstance[];
-        createdAt?: string;
-    }
+   // DeckEntry 타입 정의 (이건 이미 있을 것)
+interface DeckEntry {
+  serial_number: string;
+  count: number;
+}
+
+// DeckData 인터페이스 수정
+interface DeckData { // 저장/로드 시 사용될 타입
+  name: string;
+  cards: DeckEntry[]; // ★★★ CardInstance[] 가 아니라 DeckEntry[] 로 수정! ★★★
+  createdAt?: string;
+}
 
      // --- 상태 변수 ---
      let savedDecks: DeckData[] = [];
@@ -92,26 +98,36 @@
         resetModalSelection(); // 모달 닫기
     }
 
-    // 덱 데이터 -> 카드 객체 배열 생성 (기존 로직 유지)
-    function createDeckCards(savedDeckCards: Array<{ serial_number: string /*, count?: number */ }>): CardInstance[] {
+    function createDeckCards(savedDeckEntries: DeckEntry[]): CardInstance[] { // Rename input param for clarity
     const newDeck: CardInstance[] = [];
-    // savedDeckCards는 serial_number 목록 또는 {serial_number, count} 객체 배열이라고 가정
-    savedDeckCards.forEach(item => {
-        // 만약 카드 장수(count) 정보가 있다면 그만큼 반복 생성
-        const count = 1; // 예시: count 정보가 없다면 1장
+    console.log("createDeckCards input:", savedDeckEntries); // Debug Input
+
+    savedDeckEntries.forEach(entry => { // Iterate over DeckEntry objects
+        // ▼▼▼ Use entry.count! ▼▼▼
+        const count = entry.count; // Read the count from the input object
+        // ▲▲▲
+
+        // Check if count is valid
+        if (typeof count !== 'number' || count < 1) {
+            console.warn(`Invalid count for ${entry.serial_number}: ${count}. Skipping.`);
+            return; // Skip this entry if count is invalid
+        }
+
+        console.log(`Creating ${count} instance(s) for ${entry.serial_number}`); // Debug loop count
+
         for (let i = 0; i < count; i++) {
-            // 여기서 CardList나 cardDatabase를 참조할 필요 없음!
             newDeck.push({
-                id: uuidv4(), // 고유 ID 생성
-                serial_number: item.serial_number, // 종류 번호만 저장
+                id: uuidv4(),
+                serial_number: entry.serial_number, // Use serial_number from entry
                 zone: 'deck',
-                state: { // 기본 상태
+                state: { // Default state
                     is_animating: false, is_fading_in: false, is_fading_out: false,
                     is_flipped: false, is_selected: false, is_tapped: false,
                 }
             });
         }
     });
+    console.log("createDeckCards output length:", newDeck.length); // Debug Output Length
     return newDeck;
 }
     // 덱 섞기 (기존 로직 유지)
@@ -141,39 +157,31 @@
          tempSelectedDeckIndex = null;
     }
 
-    function startGame(): void {
-      if (playerSelectedDeckIndex === -1 || opponentSelectedDeckIndex === -1) {
-            alert('플레이어와 상대방의 덱을 모두 선택해주세요.');
-            return;
-        }
-       
-    // 1. 선택된 덱의 *기본 카드 목록* 가져오기 (serial_number, count 등)
-    // (★ DeckData 인터페이스 또는 savedDecks 실제 구조 재확인 필요!)
-    const playerDeckDefinitionList = savedDecks[playerSelectedDeckIndex].cards; // 이게 {serial_number, count?}[] 라고 가정
-    const opponentDeckDefinitionList = savedDecks[opponentSelectedDeckIndex].cards; // 이게 {serial_number, count?}[] 라고 가정
+   // /game/+page.svelte 스크립트 내부
+function startGame(): void {
+    if (playerSelectedDeckIndex === -1 || opponentSelectedDeckIndex === -1) { /* ... */ return; }
 
-    if (!playerDeckDefinitionList || !opponentDeckDefinitionList) {
-        alert('선택된 덱의 카드 목록 정보를 불러올 수 없습니다.');
-        // goto('/'); // 필요시 메인으로
-        return;
-    }
+    const playerDeckDefinitionList = savedDecks[playerSelectedDeckIndex].cards; // 53장 분량의 DeckEntry[]
+    const opponentDeckDefinitionList = savedDecks[opponentSelectedDeckIndex].cards; // 53장 분량의 DeckEntry[]
 
-    // 2. 기본 목록으로 CardInstance 배열 생성! ★ 여기가 중요!
-    const playerDeckInstances = createDeckCards(playerDeckDefinitionList); // 기본 목록 전달
-    const opponentDeckInstances = createDeckCards(opponentDeckDefinitionList); // 기본 목록 전달
+    if (!playerDeckDefinitionList || !opponentDeckDefinitionList) { /* ... */ return; }
 
-    // 3. CardInstance 배열 셔플!
-    const playerShuffledDeck = shuffleDeck(playerDeckInstances); // 수정된 shuffleDeck 사용
-    const opponentShuffledDeck = shuffleDeck(opponentDeckInstances); // 수정된 shuffleDeck 사용
+    // 53장 덱 기준으로 CardInstance 생성
+    const playerDeckInstances = createDeckCards(playerDeckDefinitionList);
+    const opponentDeckInstances = createDeckCards(opponentDeckDefinitionList);
+
+    // 53장 덱 셔플
+    const playerShuffledDeck = shuffleDeck(playerDeckInstances);
+    const opponentShuffledDeck = shuffleDeck(opponentDeckInstances);
     console.log(`플레이어 덱 ${playerShuffledDeck.length}장, 상대 덱 ${opponentShuffledDeck.length}장 준비 완료.`);
 
-    // 4. 플레이어 덱 스토어 설정
-    deck_store.set(playerShuffledDeck); // CardInstance[] 설정
+    // 플레이어 덱 스토어에 53장 설정
+    deck_store.set(playerShuffledDeck);
     console.log("플레이어 deck_store 설정 완료.");
 
-    // 5. gameStart 함수 호출 (상대방 CardInstance[] 전달)
+    // GameManager의 gameStart에는 상대방의 섞인 53장 덱만 전달!
     console.log(`상대방 덱 정보를 GameManager로 전달하며 게임 시작!`);
-    gameStart(opponentShuffledDeck); // CardInstance[] 전달
+    gameStart(opponentShuffledDeck); // ★★★ 상대방 53장 덱만 전달! ★★★
 }
     // 컴포넌트 마운트 시 저장된 덱 로드 (기존과 동일)
     onMount(() => {

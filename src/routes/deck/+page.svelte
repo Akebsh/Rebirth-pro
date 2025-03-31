@@ -88,8 +88,8 @@ let displayedCards: [string, CardDefinition][] = [];
   // 덱에 카드 추가 (CardDefinition을 인자로 받음)
   function addCardToDeck(serialNumberToAdd: string) { // ★ 인자를 serial_number 문자열로 받음
     const totalCardsInDeck = selectedCards.reduce((sum, entry) => sum + entry.count, 0);
-    if (totalCardsInDeck >= 50) {
-        alert('덱은 최대 50장까지만 구성할 수 있습니다.');
+    if (totalCardsInDeck >= 53) {
+        alert('덱은 최대 53장까지만 구성할 수 있습니다.');
         return;
     }
 
@@ -124,8 +124,8 @@ let displayedCards: [string, CardDefinition][] = [];
   // 덱 저장하기
   function saveDeck(): void {
     // ★ 50장 체크 로직 변경
-    if (totalCardsInDeck !== 50) {
-      alert('덱은 정확히 50장으로 구성해야 합니다.');
+    if (totalCardsInDeck !== 53) {
+      alert('덱은 정확히 53장으로 구성해야 합니다.');
       return;
     }
     if (!deckName.trim()) {
@@ -552,7 +552,7 @@ let displayedCards: [string, CardDefinition][] = [];
 
 
       <div class="deck-section">
-        <h2>내 덱 ({totalCardsInDeck}/50)</h2>
+        <h2>내 덱 ({totalCardsInDeck}/53)</h2>
 
         
         <div class="deck-header">
