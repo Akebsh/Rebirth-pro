@@ -483,15 +483,38 @@ let displayedCards: [string, CardDefinition][] = [];
   </style>
 
 <div class="deck-builder">
- 
   <div class="container">
     <h1>덱 빌더</h1>
     <div class="layout">
+
       <div class="card-list-section">
         <h2>카드 목록</h2>
+
+       
         <div class="filters">
-           
+          <input
+            type="text"
+            bind:value={searchTerm}
+            placeholder="카드 이름/설명 검색..."
+          />
+          <div class="filter-group">
+            <select bind:value={filterType}>
+              <option value="all">모든 타입</option>
+              <option value="character">캐릭터</option>
+              <option value="re-birth">부활</option>
+              <option value="partner">파트너</option>
+            </select>
+            <select bind:value={filterSubtype}>
+              <option value="all">모든 서브타입</option>
+              <option value="member">멤버</option>
+              <option value="spark">스파크</option>
+              <option value="guard">가드</option>
+              <option value="cancel">캔슬</option>
+            </select>
+          </div>
         </div>
+        
+
 
        
         <div class="pagination">
@@ -499,21 +522,17 @@ let displayedCards: [string, CardDefinition][] = [];
           <span>페이지 {currentPage} / {totalPages}</span>
           <button on:click={nextPage} disabled={currentPage >= totalPages}>다음</button>
         </div>
+       
 
         
         <div class="card-grid">
-         
-          {#each displayedCards as cardEntry (cardEntry[0])} 
-            {@const serial = cardEntry[0]}  
-            {@const cardDef = cardEntry[1]} 
-        
-           
+          {#each displayedCards as [serial, cardDef] (serial)} 
             <div class="card" on:click={() => addCardToDeck(serial)}> 
               <div class="card-image">
-                <img src={cardDef.image_url} alt={cardDef.name} /> 
+                <img src={cardDef.image_url} alt={cardDef.name} />
               </div>
               <div class="card-info">
-                <h3>{cardDef.name}</h3> 
+                <h3>{cardDef.name}</h3>
                 <div class="card-stats">
                   <span>ATK: {cardDef.atk}</span>
                   <span>HP: {cardDef.hp}</span>
@@ -527,60 +546,91 @@ let displayedCards: [string, CardDefinition][] = [];
             </div>
           {/each}
         </div>
-      
-      <div class="deck-section">
-        <h2>내 덱 ({totalCardsInDeck}/50)</h2> 
-        <div class="deck-header">
-           
-        </div>
-        {#if savingStatus} ... {/if}
-
        
-        <div class="deck-cards">
-           {#each selectedCards as entry (entry.serial_number)} 
-             {@const cardDef = getCardDefinition(entry.serial_number)} 
-             {#if cardDef}
-               <div class="deck-card" on:click={() => removeCardFromDeck(entry.serial_number)} title={cardDef.description}> 
-                 <img src={cardDef.image_url} alt={cardDef.name} />
-                 <div class="deck-card-overlay">
-                   <span class="card-name">{cardDef.name} (x{entry.count})</span> 
-                   <span class="remove-card">제거</span>
-                 </div>
-               </div>
-             {/if}
-           {/each}
-        </div>
+
+      </div> 
+
+
+      <div class="deck-section">
+        <h2>내 덱 ({totalCardsInDeck}/50)</h2>
 
         
-        <div class="deck-stats">
-           <h3>덱 통계</h3>
-           {#each ['character', 're-birth', 'partner'] as typeName}
-             {@const count = selectedCards.reduce((sum, entry) => {
-                 const def = getCardDefinition(entry.serial_number);
-                 return def && def.type === typeName ? sum + entry.count : sum;
-             }, 0)}
-             {#if count > 0}
-               <div class="stat-item">
-                 <span>{typeName}:</span>
-                 <span>{count}</span>
-               </div>
-             {/if}
-           {/each}
-           
+        <div class="deck-header">
+          <input
+            type="text"
+            bind:value={deckName}
+            placeholder="덱 이름"
+            class="deck-name-input"
+            aria-label="덱 이름 입력"
+          />
+          <div class="deck-actions">
+            <button on:click={saveDeck} class="save-btn">저장하기</button>
+            <button on:click={resetDeck} class="reset-btn">초기화</button>
+          </div>
         </div>
+       
+
+
+        {#if savingStatus}
+        <div class="save-status">{savingStatus}</div>
+        {/if}
+
+        
+        <div class="deck-cards">
+          {#each selectedCards as entry (entry.serial_number)}
+            {@const cardDef = getCardDefinition(entry.serial_number)}
+            {#if cardDef}
+              <div class="deck-card" on:click={() => removeCardFromDeck(entry.serial_number)} title={cardDef.description}>
+                <img src={cardDef.image_url} alt={cardDef.name} />
+                <div class="deck-card-overlay">
+                  <span class="card-name">{cardDef.name} (x{entry.count})</span>
+                  <span class="remove-card">제거</span>
+                </div>
+              </div>
+            {/if}
+          {/each}
+        </div>
+       
+
+
+      
+        <div class="deck-stats">
+          <h3>덱 통계</h3>
+          {#each ['character', 're-birth', 'partner'] as typeName}
+            {@const count = selectedCards.reduce((sum, entry) => {
+                const def = getCardDefinition(entry.serial_number);
+                return def && def.type === typeName ? sum + entry.count : sum;
+            }, 0)}
+            {#if count > 0}
+              <div class="stat-item">
+                <span>{typeName}:</span>
+                <span>{count}</span>
+              </div>
+            {/if}
+          {/each}
+        </div>
+       
+
       </div> 
     </div> 
 
-   
     <div class="saved-decks">
       <h2>저장된 덱 목록</h2>
       {#if savedDecks.length === 0}
         <p>저장된 덱이 없습니다.</p>
       {:else}
         <div class="deck-list">
-          {#each savedDecks as deck, index (deck.createdAt + deck.name)} 
+          {#each savedDecks as deck, index (deck.createdAt + deck.name)}
             <div class="saved-deck">
-             
+              
+               <div class="saved-deck-info">
+                   <h3>{deck.name}</h3>
+                   {#if deck.createdAt}
+                       <span class="deck-date">
+                           {new Date(deck.createdAt).toLocaleDateString()}
+                       </span>
+                   {/if}
+               </div>
               <div class="saved-deck-actions">
                 <button on:click={() => loadDeck(index)} class="load-btn">불러오기</button>
                 <button on:click={() => deleteDeck(index)} class="delete-btn">삭제</button>
@@ -589,11 +639,10 @@ let displayedCards: [string, CardDefinition][] = [];
           {/each}
         </div>
       {/if}
-    </div>
+    </div> 
+
   </div> 
 </div> 
-</div>
-
 
 <div class="header-actions">
     <a href="/" class="back-btn">메인 화면으로 돌아가기</a>
