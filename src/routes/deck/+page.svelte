@@ -1,89 +1,62 @@
 <script lang="ts">
     import { onMount } from 'svelte';
-    import { cardList } from '$lib/engine/CardList';
-    import type { Card } from '$lib/engine/CardManager';
-    import VirtualList from 'svelte-virtual-list';
+    import { cardDatabase, getCardDefinition, type CardDefinition } from '$lib/data/cardDatabase'; 
 
-    interface Deck {
-        name: string;
-        cards: Card[];
-        createdAt: string;
-    }
-
-    let isLoading = false;
-
-
-    // 덱 상태 관리
-    let selectedCards: Card[] = [];
-    let searchTerm = '';
-    let filterType: Card['type'] | 'all' = 'all';
-    let filterSubtype: Card['subtype'] | 'all' = 'all';
-    let deckName = '새 덱';
-    let savingStatus = '';
-  
-    let savedDecks: Deck[] = [];
-
-
+   // --- 타입 정의 ---
+  // 덱에 저장될 카드 항목 타입 (카드 종류와 개수만 저장)
+  interface DeckEntry {
+    serial_number: string;
+    count: number;
+  }
+  // 저장될 덱 데이터 타입
+  interface Deck {
+    name: string;
+    cards: DeckEntry[]; // ★ 타입 변경!
+    createdAt: string;
+  }
+  let isLoading = false;
+  let selectedCards: DeckEntry[] = []; // ★ 타입 변경! (현재 만들고 있는 덱)
+  let searchTerm = '';
+  let filterType: CardDefinition['type'] | 'all' = 'all'; // ★ Card -> CardDefinition
+  let filterSubtype: CardDefinition['subtype'] | 'all' = 'all'; // ★ Card -> CardDefinition
+  let deckName = '새 덱';
+  let savingStatus = '';
+  let savedDecks: Deck[] = [];
 
 
+// 1. cardDatabase에 의존 (가장 먼저 계산됨)
+$: allCardEntries = Object.entries(cardDatabase) as [string, CardDefinition][];
+
+// 2. allCardEntries, searchTerm, filterType, filterSubtype에 의존
+$: filteredCards = allCardEntries.filter(([serial, cardDef]) => {
+  const matchesSearch = cardDef.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                       cardDef.description.toLowerCase().includes(searchTerm.toLowerCase());
+  const matchesType = filterType === 'all' || cardDef.type === filterType;
+  const matchesSubtype = filterSubtype === 'all' || cardDef.subtype === filterSubtype;
+  return matchesSearch && matchesType && matchesSubtype;
+});
 
 
+// 4. filteredCards에 의존 (페이지네이션 관련)
+$: totalPages = Math.ceil(filteredCards.length / pageSize);
 
+let currentPage = 1;
+const pageSize = 50;
+let displayedCards: [string, CardDefinition][] = [];
 
+  function loadPageCards() {
+      const startIndex = (currentPage - 1) * pageSize;
+      displayedCards = filteredCards.slice(startIndex, startIndex + pageSize);
+  }
+  function nextPage() { if (currentPage < totalPages) { currentPage++; loadPageCards(); } }
+  function prevPage() { if (currentPage > 1) { currentPage--; loadPageCards(); } }
 
-    
-    // 페이지네이션 추가
-  let currentPage = 1;
-  const pageSize = 10;
-  let displayedCards: Card[] = [];
+  // 필터/검색어 변경 시 또는 처음 로드 시 페이지 카드 업데이트
+  $: if (filteredCards) { // filteredCards가 준비되면 실행
+      currentPage = 1; // 필터 변경 시 첫 페이지로
+      loadPageCards();
+  }
 
-   // 필터링된 카드 목록
- $: filteredCards = cardList ? cardList.filter(card => {
-      // 검색어 필터링
-      const matchesSearch = card.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                            card.description.toLowerCase().includes(searchTerm.toLowerCase());
-      
-      // 타입 필터링
-      const matchesType = filterType === 'all' || card.type === filterType;
-      
-      // 서브타입 필터링
-      const matchesSubtype = filterSubtype === 'all' || card.subtype === filterSubtype;
-      
-      return matchesSearch && matchesType && matchesSubtype;
-    }): [];
-
-
-  // 페이지네이션을 위한 추가 변수들
-  $: totalPages = Math.ceil(filteredCards.length / pageSize);
-
-  
-
- // 페이지별 카드 로드 함수
- function loadPageCards() {
-        displayedCards = getCardsByPage(currentPage, pageSize);
-    }
-
-    // 특정 페이지의 카드 데이터를 동적으로 가져오는 함수
-    function getCardsByPage(page = 1, pageSize = 50) {
-        const startIndex = (page - 1) * pageSize;
-        return filteredCards.slice(startIndex, startIndex + pageSize);
-    }
-
-    // 다음 페이지 로드 함수
-    function nextPage() {
-        if (currentPage < totalPages) {
-            currentPage++;
-            loadPageCards();
-        }
-    }
-
-    // 이전 페이지 로드 함수
-    function prevPage() {
-        if (currentPage > 1) {
-            currentPage--;
-            loadPageCards();
-        }
-    }
 
     // 컴포넌트 마운트 시 초기 페이지 로드
     onMount(() => {
@@ -100,238 +73,135 @@
         loadPageCards();
     }
 
-
-
-    let items = filteredCards || []; // 가상 리스트로 관리
+   
     let rowHeight = 100; // 카드 높이
 
     $: console.log('Total Pages:', totalPages);
     $: console.log('Current Page:', currentPage);
 
-    // 덱에 카드 추가
-    function addCardToDeck(card: Card) {
-      if (selectedCards.length >= 50) {
+
+
+
+    // 현재 덱의 총 카드 수 계산
+  $: totalCardsInDeck = selectedCards.reduce((sum, entry) => sum + entry.count, 0);
+
+  // 덱에 카드 추가 (CardDefinition을 인자로 받음)
+  function addCardToDeck(serialNumberToAdd: string) { // ★ 인자를 serial_number 문자열로 받음
+    const totalCardsInDeck = selectedCards.reduce((sum, entry) => sum + entry.count, 0);
+    if (totalCardsInDeck >= 50) {
         alert('덱은 최대 50장까지만 구성할 수 있습니다.');
         return;
-      }
-      
-      // 같은 카드는 최대 4장까지만 추가 가능
-      const countInDeck = selectedCards.filter(c => c.serial_number === card.serial_number).length;
-      if (countInDeck >= 4) {
-        alert('같은 카드는 덱에 최대 4장까지만 추가할 수 있습니다.');
-        return;
-      }
-      
-      // 카드의 복사본을 생성하여 덱에 추가
-      const cardCopy = JSON.parse(JSON.stringify(card)) as Card;
-      selectedCards = [...selectedCards, cardCopy];
     }
-  
-    // 덱에서 카드 제거
-    function removeCardFromDeck(index: number) {
-      selectedCards = selectedCards.filter((_, i) => i !== index);
+
+    // 인자로 받은 serialNumberToAdd 사용
+    const existingEntry = selectedCards.find(entry => entry.serial_number === serialNumberToAdd);
+
+    if (existingEntry) { // 이미 덱에 있는 카드 종류
+        if (existingEntry.count < 4) { // 4장 제한 체크
+            existingEntry.count++;
+            selectedCards = [...selectedCards]; // 변경 감지
+        } else {
+            alert('같은 카드는 덱에 최대 4장까지만 추가할 수 있습니다.');
+        }
+    } else { // 처음 추가하는 카드 종류
+        // 인자로 받은 serialNumberToAdd 직접 사용
+        selectedCards = [...selectedCards, { serial_number: serialNumberToAdd, count: 1 }];
     }
-  
-    // 덱 저장하기
-    function saveDeck(): void {
-      if (selectedCards.length < 50) {
-        alert('덱은 정확히 50장으로 구성해야 합니다.');
-        return;
+}
+
+  // 덱에서 카드 제거 (serial_number를 인자로 받음)
+  function removeCardFromDeck(serialNumberToRemove: string) {
+    const entryIndex = selectedCards.findIndex(entry => entry.serial_number === serialNumberToRemove);
+    if (entryIndex !== -1) {
+      selectedCards[entryIndex].count--;
+      if (selectedCards[entryIndex].count <= 0) {
+        selectedCards = selectedCards.filter((_, index) => index !== entryIndex);
+      } else {
+        selectedCards = [...selectedCards];
       }
-      
-      if (!deckName.trim()) {
-        alert('덱 이름을 입력해주세요.');
-        return;
+    }
+  }
+  // 덱 저장하기
+  function saveDeck(): void {
+    // ★ 50장 체크 로직 변경
+    if (totalCardsInDeck !== 50) {
+      alert('덱은 정확히 50장으로 구성해야 합니다.');
+      return;
+    }
+    if (!deckName.trim()) {
+      alert('덱 이름을 입력해주세요.');
+      return;
+    }
+
+    const deckToSave: Deck = { // ★ Deck 타입 사용
+      name: deckName.trim(),
+      cards: selectedCards, // ★ 이제 DeckEntry[] 타입
+      createdAt: new Date().toISOString()
+    };
+
+    try {
+        const currentSavedDecks: Deck[] = JSON.parse(localStorage.getItem('savedDecks') || '[]');
+        // TODO: 만약 같은 이름의 덱이 있다면 덮어쓰기 또는 다른 이름 요구 로직 추가?
+        currentSavedDecks.push(deckToSave);
+        localStorage.setItem('savedDecks', JSON.stringify(currentSavedDecks));
+        savedDecks = currentSavedDecks; // 화면 목록 업데이트
+        savingStatus = '덱이 성공적으로 저장되었습니다!';
+    } catch (e) {
+        console.error("덱 저장 실패:", e);
+        savingStatus = '덱 저장 중 오류가 발생했습니다.';
+    } finally {
+        setTimeout(() => { savingStatus = ''; }, 3000);
+    }
+  }
+
+  // 덱 초기화
+  function resetDeck() {
+    if (confirm('현재 작업 중인 덱을 초기화하시겠습니까?')) {
+      selectedCards = [];
+      deckName = '새 덱'; // 덱 이름도 초기화
+    }
+  }
+    
+    
+   // 저장된 덱 불러오기
+  function loadDeck(index: number) {
+    if (index < 0 || index >= savedDecks.length) return;
+    // ★ 경고: 이전 버전에서 저장된 덱은 형식이 달라 문제가 발생할 수 있음!
+    if (confirm('현재 작업 중인 덱을 버리고 선택한 덱을 불러오시겠습니까? (이전 버전 덱은 오류가 날 수 있습니다)')) {
+      const deckToLoad = savedDecks[index];
+      // 불러온 데이터 형식이 DeckEntry[] 인지 간단히 확인 (더 확실한 검증 필요)
+      if (Array.isArray(deckToLoad.cards) && (deckToLoad.cards.length === 0 || (deckToLoad.cards[0] && typeof deckToLoad.cards[0].serial_number === 'string'))) {
+          deckName = deckToLoad.name;
+          // ★ 깊은 복사를 통해 새 배열 할당 (원본 localStorage 데이터 보호)
+          selectedCards = JSON.parse(JSON.stringify(deckToLoad.cards));
+      } else {
+          alert('선택한 덱 데이터 형식이 올바르지 않아 불러올 수 없습니다.');
       }
-      
-      // 로컬 스토리지에 덱 저장
-      const deck = {
-        name: deckName,
-        cards: selectedCards,
-        createdAt: new Date().toISOString()
-      };
-      
-      const savedDecks = JSON.parse(localStorage.getItem('savedDecks') || '[]');
-      savedDecks.push(deck);
+    }
+  }
+
+  // 저장된 덱 삭제하기
+  function deleteDeck(index: number) {
+    if (confirm('선택한 덱을 삭제하시겠습니까?')) {
+      savedDecks.splice(index, 1);
       localStorage.setItem('savedDecks', JSON.stringify(savedDecks));
-      
-      savingStatus = '덱이 성공적으로 저장되었습니다!';
-      setTimeout(() => {
-        savingStatus = '';
-      }, 3000);
+      savedDecks = [...savedDecks]; // 배열 업데이트 강제
     }
-  
-    // 덱 초기화
-    function resetDeck() {
-      if (confirm('덱을 초기화하시겠습니까?')) {
-        selectedCards = [];
-      }
+  }
+
+  // 컴포넌트 마운트 시 저장된 덱 목록 불러오기
+  onMount(() => {
+    try {
+        const loadedDecks: Deck[] = JSON.parse(localStorage.getItem('savedDecks') || '[]');
+        // ★ 데이터 형식 검증 로직 추가하면 더 안전함
+        savedDecks = loadedDecks;
+    } catch (e) {
+        console.error("저장된 덱 목록 로딩 실패:", e);
+        savedDecks = [];
     }
-  
-    
-    
-    // 저장된 덱 불러오기
-    function loadDeck(index: number) {
-      if (confirm('현재 작업 중인 덱을 버리고 선택한 덱을 불러오시겠습니까?')) {
-        const deck = savedDecks[index];
-        deckName = deck.name;
-        selectedCards = deck.cards;
-      }
-    }
-    
-    // 저장된 덱 삭제하기
-    function deleteDeck(index: number) {
-      if (confirm('선택한 덱을 삭제하시겠습니까?')) {
-        savedDecks.splice(index, 1);
-        localStorage.setItem('savedDecks', JSON.stringify(savedDecks));
-        savedDecks = [...savedDecks]; // 배열 업데이트 트리거
-      }
-    }
-  
-    onMount(() => {
-      // 저장된 덱 목록 불러오기
-      const loadedDecks: Deck[] = JSON.parse(localStorage.getItem('savedDecks') || '[]');
-      savedDecks = loadedDecks;
-    });
+  });
   </script>
   
-  <div class="deck-builder">
-    <div class="container">
-      <h1>덱 빌더</h1>
-      
-      <div class="layout">
-        <!-- 카드 목록 섹션 -->
-        <div class="card-list-section">
-          <h2>카드 목록</h2>
-          
-          <div class="filters">
-            <input 
-              type="text" 
-              bind:value={searchTerm} 
-              placeholder="카드 이름/설명 검색..."
-            />
-            
-            <div class="filter-group">
-              <select bind:value={filterType}>
-                <option value="all">모든 타입</option>
-                <option value="character">캐릭터</option>
-                <option value="re-birth">부활</option>
-                <option value="partner">파트너</option>
-              </select>
-              
-              <select bind:value={filterSubtype}>
-                <option value="all">모든 서브타입</option>
-                <option value="member">멤버</option>
-                <option value="spark">스파크</option>
-                <option value="guard">가드</option>
-                <option value="cancel">캔슬</option>
-              </select>
-            </div>
-          </div>
-          
-          <div class="card-grid">
-            {#each filteredCards as card (card.serial_number)}
-              <div class="card" on:click={() => addCardToDeck(card)}>
-                <div class="card-image">
-                  <img src={card.image_url} alt={card.name} />
-                </div>
-                <div class="card-info">
-                  <h3>{card.name}</h3>
-                  <div class="card-stats">
-                    <span>ATK: {card.atk}</span>
-                    <span>HP: {card.hp}</span>
-                  </div>
-                  <div class="card-type">
-                    <span>{card.type}</span>
-                    <span>{card.subtype}</span>
-                  </div>
-                  <p class="card-description">{card.description}</p>
-                </div>
-              </div>
-            {/each}
-          </div>
-        </div>
-        
-        <!-- 덱 구성 섹션 -->
-        <div class="deck-section">
-          <h2>내 덱 ({selectedCards.length}/50)</h2>
-          
-          <div class="deck-header">
-            <input 
-              type="text" 
-              bind:value={deckName} 
-              placeholder="덱 이름"
-              class="deck-name-input"
-            />
-            
-            <div class="deck-actions">
-              <button on:click={saveDeck} class="save-btn">저장하기</button>
-              <button on:click={resetDeck} class="reset-btn">초기화</button>
-            </div>
-          </div>
-          
-          {#if savingStatus}
-            <div class="save-status">{savingStatus}</div>
-          {/if}
-          
-          <div class="deck-cards">
-            {#each selectedCards as card, index (index)}
-              <div class="deck-card" on:click={() => removeCardFromDeck(index)}>
-                <img src={card.image_url} alt={card.name} />
-                <div class="deck-card-overlay">
-                  <span class="card-name">{card.name}</span>
-                  <span class="remove-card">제거</span>
-                </div>
-              </div>
-            {/each}
-          </div>
-          
-          <!-- 카드 타입별 통계 -->
-          <div class="deck-stats">
-            <h3>덱 통계</h3>
-            <div class="stat-item">
-              <span>캐릭터:</span>
-              <span>{selectedCards.filter(c => c.type === 'character').length}</span>
-            </div>
-            <div class="stat-item">
-              <span>부활:</span>
-              <span>{selectedCards.filter(c => c.type === 're-birth').length}</span>
-            </div>
-            <div class="stat-item">
-              <span>파트너:</span>
-              <span>{selectedCards.filter(c => c.type === 'partner').length}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-      
-      <!-- 저장된 덱 목록 -->
-      <div class="saved-decks">
-        <h2>저장된 덱 목록</h2>
-        
-        {#if savedDecks.length === 0}
-          <p>저장된 덱이 없습니다.</p>
-        {:else}
-          <div class="deck-list">
-            {#each savedDecks as deck, index (index)}
-              <div class="saved-deck">
-                <div class="saved-deck-info">
-                  <h3>{deck.name}</h3>
-                  <span class="deck-date">
-                    {new Date(deck.createdAt).toLocaleDateString()}
-                  </span>
-                </div>
-                <div class="saved-deck-actions">
-                  <button on:click={() => loadDeck(index)} class="load-btn">불러오기</button>
-                  <button on:click={() => deleteDeck(index)} class="delete-btn">삭제</button>
-                </div>
-              </div>
-            {/each}
-          </div>
-        {/if}
-      </div>
-    </div>
-  </div>
   
   <style>
     .deck-builder {
@@ -612,32 +482,119 @@
 
   </style>
 
-<div class="pagination">
-  <button on:click={prevPage} disabled={currentPage === 1}>이전</button>
-  <span>{currentPage} / {totalPages}</span>
-  <button on:click={nextPage} disabled={currentPage === totalPages}>다음</button>
+<div class="deck-builder">
+ 
+  <div class="container">
+    <h1>덱 빌더</h1>
+    <div class="layout">
+      <div class="card-list-section">
+        <h2>카드 목록</h2>
+        <div class="filters">
+           
+        </div>
+
+       
+        <div class="pagination">
+          <button on:click={prevPage} disabled={currentPage <= 1}>이전</button>
+          <span>페이지 {currentPage} / {totalPages}</span>
+          <button on:click={nextPage} disabled={currentPage >= totalPages}>다음</button>
+        </div>
+
+        
+        <div class="card-grid">
+         
+          {#each displayedCards as cardEntry (cardEntry[0])} 
+            {@const serial = cardEntry[0]}  
+            {@const cardDef = cardEntry[1]} 
+        
+           
+            <div class="card" on:click={() => addCardToDeck(serial)}> 
+              <div class="card-image">
+                <img src={cardDef.image_url} alt={cardDef.name} /> 
+              </div>
+              <div class="card-info">
+                <h3>{cardDef.name}</h3> 
+                <div class="card-stats">
+                  <span>ATK: {cardDef.atk}</span>
+                  <span>HP: {cardDef.hp}</span>
+                </div>
+                <div class="card-type">
+                  <span>{cardDef.type}</span>
+                  <span>{cardDef.subtype}</span>
+                </div>
+                <p class="card-description">{cardDef.description}</p>
+              </div>
+            </div>
+          {/each}
+        </div>
+      
+      <div class="deck-section">
+        <h2>내 덱 ({totalCardsInDeck}/50)</h2> 
+        <div class="deck-header">
+           
+        </div>
+        {#if savingStatus} ... {/if}
+
+       
+        <div class="deck-cards">
+           {#each selectedCards as entry (entry.serial_number)} 
+             {@const cardDef = getCardDefinition(entry.serial_number)} 
+             {#if cardDef}
+               <div class="deck-card" on:click={() => removeCardFromDeck(entry.serial_number)} title={cardDef.description}> 
+                 <img src={cardDef.image_url} alt={cardDef.name} />
+                 <div class="deck-card-overlay">
+                   <span class="card-name">{cardDef.name} (x{entry.count})</span> 
+                   <span class="remove-card">제거</span>
+                 </div>
+               </div>
+             {/if}
+           {/each}
+        </div>
+
+        
+        <div class="deck-stats">
+           <h3>덱 통계</h3>
+           {#each ['character', 're-birth', 'partner'] as typeName}
+             {@const count = selectedCards.reduce((sum, entry) => {
+                 const def = getCardDefinition(entry.serial_number);
+                 return def && def.type === typeName ? sum + entry.count : sum;
+             }, 0)}
+             {#if count > 0}
+               <div class="stat-item">
+                 <span>{typeName}:</span>
+                 <span>{count}</span>
+               </div>
+             {/if}
+           {/each}
+           
+        </div>
+      </div> 
+    </div> 
+
+   
+    <div class="saved-decks">
+      <h2>저장된 덱 목록</h2>
+      {#if savedDecks.length === 0}
+        <p>저장된 덱이 없습니다.</p>
+      {:else}
+        <div class="deck-list">
+          {#each savedDecks as deck, index (deck.createdAt + deck.name)} 
+            <div class="saved-deck">
+             
+              <div class="saved-deck-actions">
+                <button on:click={() => loadDeck(index)} class="load-btn">불러오기</button>
+                <button on:click={() => deleteDeck(index)} class="delete-btn">삭제</button>
+              </div>
+            </div>
+          {/each}
+        </div>
+      {/if}
+    </div>
+  </div> 
+</div> 
 </div>
 
 
 <div class="header-actions">
     <a href="/" class="back-btn">메인 화면으로 돌아가기</a>
 </div>
-
-{#if isLoading}
-  <p>로딩 중...</p>
-{:else}
-  {#each displayedCards as card}
-    <!-- 카드 렌더링 -->
-  {/each}
-{/if}
-
-<VirtualList
-    items={items}
-    rowHeight={rowHeight}
-    {currentPage}
-    {pageSize}
-    let:item>
-    <div class="card">
-        <!-- 카드 내용 렌더링 -->
-    </div>
-</VirtualList>
