@@ -2,7 +2,8 @@
     // ✅ 상대방 스토어 import (CardStore.ts에 정의 필요)
     import { waiting_store, opponent_waiting_store } from "$lib/engine/CardStore";
     import Card from "./Card.svelte";
-    import type { Card as CardType } from '$lib/engine/CardManager';  // 타입 경로 확인
+    import type { CardInstance } from '$lib/engine/CardManager'; // 또는 다른 경로
+    import { getCardDefinition, type CardDefinition } from '$lib/data/cardDatabase';
     import { get } from "svelte/store";
     export let gridArea: string | undefined = undefined;
     // ✅ player prop 선언
@@ -32,7 +33,7 @@
         showPopup = false;
     }
   
-    $: cards = $zoneStore as CardType[]; // 타입 명시
+    $: cards = $zoneStore as CardInstance[]; // 타입 명시
   </script>
 
 <style>
@@ -155,7 +156,7 @@
             {#if cards.length > 0}
                 {#each cards.slice(-5) as card, i (card.id)}
                     <div class="card-wrapper" style="transform: translateY({i * 1}px) translateX({i * 1}px); z-index: {i};">
-                        <Card card_data={card} />
+                        <Card cardInstance={card} />
                     </div>
                 {/each}
             {:else}
@@ -172,7 +173,7 @@
           <div class="popup-content">
               {#each cards as card (card.serial_number)}
                   <div class="popup-card">
-                      <Card card_data={card} />
+                      <Card cardInstance={card} />
                   </div>
               {/each}
           </div>

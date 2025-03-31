@@ -7,7 +7,8 @@ import {
   opponent_entry_store,
   opponent_hand_store,
 } from "./CardStore";
-import { CardMovement, createCard, type Card } from "./CardManager";
+import { CardMovement, type CardInstance } from "./CardManager";
+import { getCardDefinition } from "$lib/data/cardDatabase";
 
 export enum GAME_PHASE {
   END = 0,
@@ -19,7 +20,7 @@ export enum GAME_PHASE {
 export let game_playing = writable(false);
 export let current_phase = writable(GAME_PHASE.END);
 
-export function gameSetting() {
+/* export function gameSetting() {
   for (let i = 0; i < 20; i++) {
     deck_store.update((deck) => [
       ...deck,
@@ -99,9 +100,9 @@ export function gameSetting() {
       is_first_entry: true,
     }),
   ]);
-}
+} */
 // gameStart 함수를 수정하여 선택된 덱이 없으면 경고 메시지 표시
-export function gameStart(opponentDeck: Card[]): boolean {
+export function gameStart(opponentDeck: CardInstance[]): boolean {
   // 반환 타입을 boolean으로 명시
 
   // --- 1. 플레이어 초기 설정 (기존 로직 활용) ---
@@ -114,17 +115,20 @@ export function gameStart(opponentDeck: Card[]): boolean {
   }
 
   // 플레이어 첫 엔트리 카드 찾기 및 이동
-  const playerFirstEntry = playerDeck.find((card) => card.is_first_entry);
-  if (playerFirstEntry) {
-    // CardMovement가 deck_store에서 entry_store로 이동시킨다고 가정
-    const moved = CardMovement.moveCard(playerFirstEntry, "deck", "entry");
-    if (!moved) {
-      console.error("플레이어 첫 엔트리 카드 이동 실패");
-      // 필요하다면 여기서 false 반환 처리
-    }
+  // 플레이어 첫 엔트리 찾기 수정
+  const playerFirstEntryInstance = playerDeck.find((instance) => {
+    const definition = getCardDefinition(instance.serial_number);
+    return definition?.is_first_entry ?? false; // ★ DB 조회 후 확인!
+  });
+  if (playerFirstEntryInstance) {
+    const moved = CardMovement.moveCard(
+      playerFirstEntryInstance,
+      "deck",
+      "entry"
+    ); // ★ 인스턴스 전달
+    // ...
   } else {
-    console.warn("플레이어 덱에 첫 엔트리 카드가 없습니다.");
-    // 게임 규칙에 따라 필수라면 여기서 false 반환
+    console.warn("플레이어 덱에 첫 엔트리 정의된 카드가 없습니다.");
   }
 
   // 플레이어 초기 핸드 드로우 (3장)
@@ -152,28 +156,28 @@ export function gameStart(opponentDeck: Card[]): boolean {
   }
 
   // 상대방 첫 엔트리 카드 찾기
-  const opponentFirstEntryIndex = currentOpponentDeck.findIndex(
-    (card) => card.is_first_entry
-  );
+  const opponentFirstEntryIndex = currentOpponentDeck.findIndex((instance) => {
+    const definition = getCardDefinition(instance.serial_number);
+    return definition?.is_first_entry ?? false; // ★ DB 조회 후 확인!
+  });
   if (opponentFirstEntryIndex !== -1) {
-    // 카드 배열에서 직접 제거하고 정보 가져오기
-    const [opponentFirstEntry] = currentOpponentDeck.splice(
+    const [opponentFirstEntryInstance] = currentOpponentDeck.splice(
       opponentFirstEntryIndex,
       1
     );
-    opponentFirstEntry.zone = "entry"; // 카드 상태 업데이트
-
-    // 상대방 엔트리 스토어에 직접 추가 (CardMovement 수정 대신 임시 방편)
-    opponent_entry_store.update((entries) => [...entries, opponentFirstEntry]);
-    console.log(`상대방 첫 엔트리 카드(${opponentFirstEntry.name}) 배치 완료`);
+    opponentFirstEntryInstance.zone = "entry";
+    opponent_entry_store.update((entries) => [
+      ...entries,
+      opponentFirstEntryInstance,
+    ]); // ★ 인스턴스 전달
+    // 로그 수정 필요 (아래 참고)
   } else {
-    console.warn("상대방 덱에 첫 엔트리 카드가 없습니다.");
-    // 게임 규칙에 따라 필수라면 여기서 false 반환
+    console.warn("상대방 덱에 첫 엔트리 정의된 카드가 없습니다.");
   }
 
   // 상대방 초기 핸드 드로우 (3장)
   console.log("상대방 초기 핸드 드로우 (3장)");
-  const opponentInitialHand: Card[] = [];
+  const opponentInitialHand: CardInstance[] = [];
   for (let i = 0; i < 3; i++) {
     if (currentOpponentDeck.length === 0) {
       console.error("상대방 핸드 드로우 중 덱 부족");
@@ -230,7 +234,7 @@ export async function automaticPhaseProgress() {
 
 // 저장된 덱 목록을 가져오는 store
 export const saved_decks_store = writable<
-  { name: string; cards: Card[]; createdAt: string }[]
+  { name: string; cards: CardInstance[]; createdAt: string }[]
 >([]);
 
 // 현재 선택된 덱 ID를 저장하는 store
@@ -243,6 +247,7 @@ export function loadSavedDecks() {
   return loadedDecks;
 }
 
+/*
 // 특정 덱 불러와서 게임에 적용하기
 export function loadDeckToGame(deckIndex: number) {
   const decks = get(saved_decks_store);
@@ -291,9 +296,10 @@ export function loadDeckToGame(deckIndex: number) {
 
   return true;
 }
+  
 
 // 덱 섞기 함수
-function shuffleDeck(deck: Card[]): Card[] {
+function shuffleDeck(deck: CardInstance[]): CardInstance[] {
   const shuffled = [...deck];
   for (let i = shuffled.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
@@ -301,3 +307,5 @@ function shuffleDeck(deck: Card[]): Card[] {
   }
   return shuffled;
 }
+
+*/

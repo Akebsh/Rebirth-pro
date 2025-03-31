@@ -2,7 +2,9 @@
     // ✅ 상대방 스토어 import (CardStore.ts에 정의 필요)
     import { rebirth_store, opponent_rebirth_store } from "$lib/engine/CardStore";
     import Card from "./Card.svelte";
-    import type { Card as CardType } from '$lib/engine/CardManager';  // 타입 경로 확인
+    import type { CardInstance } from '$lib/engine/CardManager'; // 또는 다른 경로
+    import { getCardDefinition, type CardDefinition } from '$lib/data/cardDatabase';
+
     export let gridArea: string | undefined = undefined;
     // ✅ player prop 선언
     export let player: 'player' | 'opponent' | undefined = 'player';
@@ -10,7 +12,7 @@
     // ✅ player 값에 따라 사용할 스토어 선택
     $: zoneStore = player === 'opponent' ? opponent_rebirth_store : rebirth_store;
   
-    $: cards = $zoneStore as CardType[];
+    $: cards = $zoneStore as CardInstance[];
   </script>
 
 <style>
@@ -47,7 +49,7 @@
     <div class="rebirth-container">
         {#if cards.length > 0}
             {#each cards as card (card.id)}
-                <Card card_data={card}></Card>
+                <Card cardInstance={card}></Card>
             {/each}
         {:else}
              <div style="width: 126px; height: 176px; border: 2px dashed #666; ..."></div>

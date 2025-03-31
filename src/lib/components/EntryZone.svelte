@@ -1,7 +1,8 @@
 <script lang="ts">
     import { entry_store , opponent_entry_store} from "$lib/engine/CardStore";
     import Card from "./Card.svelte";
-    import type { Card as CardType } from '$lib/engine/CardManager'; 
+    import type { CardInstance } from '$lib/engine/CardManager'; // 또는 다른 경로
+    import { getCardDefinition, type CardDefinition } from '$lib/data/cardDatabase';
 
     export let gridArea: string | undefined = undefined;
     // ✅ player prop을 선언합니다. 기본값은 'player'
@@ -11,7 +12,7 @@
 $: zoneStore = player === 'opponent' ? opponent_entry_store : entry_store;
 
 // ✅ 결정된 스토어에서 첫 번째 카드를 가져옵니다.
-$: entry_card = $zoneStore[0] as CardType | undefined; // 타입 단언 추가
+$: entry_card = $zoneStore[0] as CardInstance | undefined; // 타입 단언 추가
 
 
 
@@ -60,7 +61,7 @@ $: entry_card = $zoneStore[0] as CardType | undefined; // 타입 단언 추가
     <div class="entry-container">
         <div class="entry-slot">
             {#if entry_card}
-                <Card card_data={entry_card} />
+                <Card cardInstance={entry_card} />
             {/if}
         </div>
     </div>

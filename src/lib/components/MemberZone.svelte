@@ -2,8 +2,9 @@
     // ✅ 상대방 멤버 스토어 import (CardStore.ts에 정의 필요)
     import { member_store, opponent_member_store } from "$lib/engine/CardStore";
     import Card from "./Card.svelte";
-    import type { Card as CardType } from '$lib/engine/CardManager'; // 타입 경로 확인
-    
+    import type { CardInstance } from '$lib/engine/CardManager'; // 또는 다른 경로
+    import { getCardDefinition, type CardDefinition } from '$lib/data/cardDatabase';
+
     export let gridArea: string | undefined = undefined;
     // ✅ player prop 선언
     export let player: 'player' | 'opponent' | undefined = 'player';
@@ -12,9 +13,9 @@
     $: zoneStore = player === 'opponent' ? opponent_member_store : member_store;
   
     // ✅ 선택된 스토어에서 각 멤버 위치 카드 찾기
-    $: member1 = $zoneStore.find(card => card.zone === "member1") as CardType | undefined;
-    $: member2 = $zoneStore.find(card => card.zone === "member2") as CardType | undefined;
-    $: member3 = $zoneStore.find(card => card.zone === "member3") as CardType | undefined;
+    $: member1 = $zoneStore.find(card => card.zone === "member1") as CardInstance | undefined;
+    $: member2 = $zoneStore.find(card => card.zone === "member2") as CardInstance | undefined;
+    $: member3 = $zoneStore.find(card => card.zone === "member3") as CardInstance | undefined;
   </script>
 
 
@@ -58,8 +59,8 @@
 <div class="member member-zone-component"style={gridArea ? `grid-area: ${gridArea};` : ''}> 
     <h3>{player === 'opponent' ? 'Opponent Member' : 'Member'}</h3>
     <div class="member-container">
-        <div class="member-slot">{#if member1}<Card card_data={member1} />{/if}</div>
-        <div class="member-slot">{#if member2}<Card card_data={member2} />{/if}</div>
-        <div class="member-slot">{#if member3}<Card card_data={member3} />{/if}</div>
+        <div class="member-slot">{#if member1}<Card cardInstance={member1} />{/if}</div>
+        <div class="member-slot">{#if member2}<Card cardInstance={member2} />{/if}</div>
+        <div class="member-slot">{#if member3}<Card cardInstance={member3} />{/if}</div>
     </div>
   </div>

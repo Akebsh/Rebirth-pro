@@ -12,15 +12,16 @@
     import RetireZone from "$lib/components/RetireZone.svelte";
     import { gameStart, game_playing, automaticPhaseProgress } from "$lib/engine/GameManager";
     import { deck_store , entry_store } from "$lib/engine/CardStore";
-    import type { Card } from '$lib/engine/CardManager';
+    
     import { get } from "svelte/store";
     import { CardMovement } from "$lib/engine/CardManager";
     import { v4 as uuidv4 } from 'uuid';
+    import type { CardInstance } from '$lib/engine/CardManager';
 
     // ✅ Deck 인터페이스 정의 (DeckComponent와 충돌 방지)
     interface DeckData {
         name: string;
-        cards: Card[];
+        cards: CardInstance[];
         createdAt?: string;
     }
 
@@ -51,7 +52,6 @@
             console.log("엔트리에 이미 카드가 있습니다.");
             return;
         }
-        console.log(`(덱 → 엔트리): ${card.name}`);
         CardMovement.moveCard(card, "deck", "entry", "top"); // 기존 로직 유지 가정
     }
 
@@ -93,25 +93,29 @@
     }
 
     // 덱 데이터 -> 카드 객체 배열 생성 (기존 로직 유지)
-    function createDeckCards(cardDataArray: Card[]): Card[] {
-        return cardDataArray.map(cardData => ({
-            id: uuidv4(),
-            serial_number: cardData.serial_number,
-            name: cardData.name,
-            description: cardData.description,
-            image_url: cardData.image_url,
-            atk: cardData.atk,
-            hp: cardData.hp,
-            type: cardData.type,
-            subtype: cardData.subtype,
-            zone: "deck",
-            is_first_entry: cardData.subtype === 'member',
-            state: { is_animating: false, is_fading_in: false, is_fading_out: false, is_flipped: false, is_selected: false, is_tapped: false }
-        }));
-    }
-
+    function createDeckCards(savedDeckCards: Array<{ serial_number: string /*, count?: number */ }>): CardInstance[] {
+    const newDeck: CardInstance[] = [];
+    // savedDeckCards는 serial_number 목록 또는 {serial_number, count} 객체 배열이라고 가정
+    savedDeckCards.forEach(item => {
+        // 만약 카드 장수(count) 정보가 있다면 그만큼 반복 생성
+        const count = 1; // 예시: count 정보가 없다면 1장
+        for (let i = 0; i < count; i++) {
+            // 여기서 CardList나 cardDatabase를 참조할 필요 없음!
+            newDeck.push({
+                id: uuidv4(), // 고유 ID 생성
+                serial_number: item.serial_number, // 종류 번호만 저장
+                zone: 'deck',
+                state: { // 기본 상태
+                    is_animating: false, is_fading_in: false, is_fading_out: false,
+                    is_flipped: false, is_selected: false, is_tapped: false,
+                }
+            });
+        }
+    });
+    return newDeck;
+}
     // 덱 섞기 (기존 로직 유지)
-    function shuffleDeck(deck: Card[]): Card[] {
+    function shuffleDeck(deck: CardInstance[]): CardInstance[] {
         const shuffled = [...deck];
         for (let i = shuffled.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
@@ -137,40 +141,40 @@
          tempSelectedDeckIndex = null;
     }
 
-    // 게임 시작 함수 (수정됨)
     function startGame(): void {
-        // 양쪽 다 덱 선택했는지 확인
-        if (playerSelectedDeckIndex === -1 || opponentSelectedDeckIndex === -1) {
+      if (playerSelectedDeckIndex === -1 || opponentSelectedDeckIndex === -1) {
             alert('플레이어와 상대방의 덱을 모두 선택해주세요.');
             return;
         }
+       
+    // 1. 선택된 덱의 *기본 카드 목록* 가져오기 (serial_number, count 등)
+    // (★ DeckData 인터페이스 또는 savedDecks 실제 구조 재확인 필요!)
+    const playerDeckDefinitionList = savedDecks[playerSelectedDeckIndex].cards; // 이게 {serial_number, count?}[] 라고 가정
+    const opponentDeckDefinitionList = savedDecks[opponentSelectedDeckIndex].cards; // 이게 {serial_number, count?}[] 라고 가정
 
-        // 1. 선택된 덱 데이터 가져오기
-        const playerDeckData = savedDecks[playerSelectedDeckIndex];
-        const opponentDeckData = savedDecks[opponentSelectedDeckIndex];
-
-        if (!playerDeckData || !opponentDeckData) {
-            alert('선택된 덱 정보를 불러올 수 없습니다.');
-            return;
-        }
-
-        // 2. 카드 배열 생성 및 섞기
-        const playerDeckCards = createDeckCards(playerDeckData.cards);
-        const playerShuffledDeck = shuffleDeck(playerDeckCards);
-
-        const opponentDeckCards = createDeckCards(opponentDeckData.cards);
-        const opponentShuffledDeck = shuffleDeck(opponentDeckCards);
-
-        // 3. 플레이어 덱만! deck_store에 설정
-        deck_store.set(playerShuffledDeck);
-        console.log(`플레이어 덱 (${playerDeckData.name})을 deck_store에 로드.`);
-
-        // 4. gameStart 함수 호출 (상대방 덱은 인자로 전달)
-        console.log(`상대방 덱 (${opponentDeckData.name}) 정보를 GameManager로 전달하며 게임 시작!`);
-        // !!! 중요: GameManager.ts의 gameStart 함수가 opponentShuffledDeck 인자를 받도록 수정해야 함 !!!
-        gameStart(opponentShuffledDeck); // 이 부분은 GameManager 수정 후 작동
+    if (!playerDeckDefinitionList || !opponentDeckDefinitionList) {
+        alert('선택된 덱의 카드 목록 정보를 불러올 수 없습니다.');
+        // goto('/'); // 필요시 메인으로
+        return;
     }
 
+    // 2. 기본 목록으로 CardInstance 배열 생성! ★ 여기가 중요!
+    const playerDeckInstances = createDeckCards(playerDeckDefinitionList); // 기본 목록 전달
+    const opponentDeckInstances = createDeckCards(opponentDeckDefinitionList); // 기본 목록 전달
+
+    // 3. CardInstance 배열 셔플!
+    const playerShuffledDeck = shuffleDeck(playerDeckInstances); // 수정된 shuffleDeck 사용
+    const opponentShuffledDeck = shuffleDeck(opponentDeckInstances); // 수정된 shuffleDeck 사용
+    console.log(`플레이어 덱 ${playerShuffledDeck.length}장, 상대 덱 ${opponentShuffledDeck.length}장 준비 완료.`);
+
+    // 4. 플레이어 덱 스토어 설정
+    deck_store.set(playerShuffledDeck); // CardInstance[] 설정
+    console.log("플레이어 deck_store 설정 완료.");
+
+    // 5. gameStart 함수 호출 (상대방 CardInstance[] 전달)
+    console.log(`상대방 덱 정보를 GameManager로 전달하며 게임 시작!`);
+    gameStart(opponentShuffledDeck); // CardInstance[] 전달
+}
     // 컴포넌트 마운트 시 저장된 덱 로드 (기존과 동일)
     onMount(() => {
         loadSavedDecks();

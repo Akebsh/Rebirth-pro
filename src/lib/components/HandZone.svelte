@@ -2,8 +2,9 @@
     // ✅ 상대방 핸드 스토어 import (CardStore.ts에 정의 필요)
     import { hand_store, opponent_hand_store } from "$lib/engine/CardStore";
     import Card from "./Card.svelte";
-    import type { Card as CardType } from '$lib/engine/CardManager';  // 타입 경로 확인
-  
+    import type { CardInstance } from '$lib/engine/CardManager'; // 또는 다른 경로
+    import { getCardDefinition, type CardDefinition } from '$lib/data/cardDatabase';
+
     export let gridArea: string | undefined = undefined;
     // ✅ player prop 선언
     export let player: 'player' | 'opponent' | undefined = 'player';
@@ -12,7 +13,7 @@
     $: zoneStore = player === 'opponent' ? opponent_hand_store : hand_store;
   
     // $: cards = $zoneStore; // 스토어 구독 (타입 명시 위해 아래처럼)
-    $: cards = $zoneStore as CardType[];
+    $: cards = $zoneStore as CardInstance[];
   
   </script>
 
@@ -53,9 +54,9 @@
         {#if cards.length > 0}
            {#each cards as card (card.id)}
               {#if player === 'opponent'}
-                 <img src="/rebirthBack.png" alt="Opponent Card" class="opponent-card-back" />
+              <Card cardInstance={card}></Card>
               {:else}
-                 <Card card_data={card}></Card>
+                 <Card cardInstance={card}></Card>
               {/if}
            {/each}
         {/if}

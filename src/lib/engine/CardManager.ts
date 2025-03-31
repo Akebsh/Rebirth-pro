@@ -11,40 +11,22 @@ import {
   retire_store,
 } from "./CardStore";
 
-export interface Card {
-  id?: string;
-  serial_number: string;
-  name: string;
-  description: string;
-  image_url: string;
-  atk: number;
-  hp: number;
-  type: "character" | "re-birth" | "partner";
-  subtype: "member" | "spark" | "guard" | "cancel";
-  zone:
-    | "deck"
-    | "hand"
-    | "entry"
-    | "member1"
-    | "member2"
-    | "member3"
-    | "waiting"
-    | "retire"
-    | "re-birth"
-    | "energy"
-    | "partner";
-  is_first_entry: boolean;
+export interface CardInstance {
+  id: string; // 고유 인스턴스 ID (UUID, 필수!)
+  serial_number: string; // 어떤 종류의 카드인지 식별
+  zone: string; // 카드의 현재 위치 (기존 Zone 타입 사용)
   state: {
+    // 카드의 현재 상태
     is_animating: boolean;
     is_fading_in: boolean;
     is_fading_out: boolean;
-    is_flipped: boolean;
-    is_selected: boolean;
-    is_tapped: boolean;
+    is_flipped: boolean; // 앞면/뒷면
+    is_selected: boolean; // 선택되었는지
+    is_tapped: boolean; // 탭(회전)되었는지
   };
 }
 
-export function createCard(data: Partial<Card>): Card {
+/* export function createCard(data: Partial<Card>): Card {
   return {
     serial_number: data.serial_number ?? "",
     name: data.name ?? "",
@@ -66,7 +48,7 @@ export function createCard(data: Partial<Card>): Card {
       ...data.state,
     },
   };
-}
+} */
 
 export class CardMovement {
   static async drawCard(): Promise<void> {
@@ -101,7 +83,7 @@ export class CardMovement {
   }
 
   static moveCard(
-    card: Card,
+    card: CardInstance,
     from_zone: string,
     target_zone: string,
     position: "top" | "bottom" = "bottom" // 기본값: bottom

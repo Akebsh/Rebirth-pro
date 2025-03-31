@@ -1,17 +1,21 @@
 <script lang="ts">
     import { get } from "svelte/store";
-    import type { Card } from "$lib/engine/CardManager";
+    import type { CardInstance } from '$lib/engine/CardManager'; // 또는 다른 경로
+    import { getCardDefinition, type CardDefinition } from '$lib/data/cardDatabase';
     import { selected_card } from "$lib/engine/CardStore";
     import { CardMovement } from "$lib/engine/CardManager";
     
-    export let card_data: Card;
+    export let cardInstance: CardInstance;
     let card_actions = Array<string>();
     let showMemberSubmenu: boolean = false;
     let showDeckSubmenu: boolean = false;
     let isExpanded: boolean = false;
     let pressTimer: number | null = null; // 타이머 변수
 
-    $: card_data.state.is_selected = $selected_card === card_data;
+    let isSelected: boolean;
+    $: isSelected = $selected_card === cardInstance;
+
+    $: cardDefinition = getCardDefinition(cardInstance.serial_number);
 
  // 꾹 눌렀을 때 시작
  function handleMouseDown(event: MouseEvent) {
@@ -37,8 +41,8 @@
     function handleRightClick(event: MouseEvent) {
         console.log("우클릭 이벤트 감지됨!");
         event.preventDefault(); // 기본 우클릭 메뉴 방지
-        card_data.state.is_tapped = !card_data.state.is_tapped;
-        selected_card.set(card_data); // 변경 사항 반영
+        cardInstance.state.is_tapped = !cardInstance.state.is_tapped;
+        selected_card.set(cardInstance); // 변경 사항 반영
         
     }
 
@@ -49,31 +53,31 @@
             current_selected_card.state.is_selected = false;
         }
 
-        selected_card.set(card_data);
-        card_data.state.is_selected = true;
+        selected_card.set(cardInstance);
+        cardInstance.state.is_selected = true;
 
 
-        if (card_data.zone === "hand") {
+        if (cardInstance.zone === "hand") {
             card_actions = ["덱", "엔트", "대기" ,"멤버", "에너", "파트", "리버" ,"리타"];
-        } else if (card_data.zone === "entry") {
+        } else if (cardInstance.zone === "entry") {
             card_actions = ["덱", "대기" ,"멤버", "에너", "파트", "리버" ,"리타" ,"핸드"];
         }
-        else if (card_data.zone === "waiting") {
+        else if (cardInstance.zone === "waiting") {
             card_actions = ["덱", "엔트" ,"멤버", "에너", "파트", "리버" ,"리타" ,"핸드"];
         }
-        else if (card_data.zone === "member1" ||card_data.zone === "member2" ||card_data.zone === "member3"  ) {
+        else if (cardInstance.zone === "member1" ||cardInstance.zone === "member2" ||cardInstance.zone === "member3"  ) {
             card_actions = ["덱", "엔트", "대기" , "에너", "파트", "리버" ,"리타" ,"핸드"];
         }
-        else if (card_data.zone === "energy") {
+        else if (cardInstance.zone === "energy") {
             card_actions = ["덱", "엔트", "대기" ,"멤버", "파트", "리버" ,"리타" ,"핸드"];
         }
-        else if (card_data.zone === "partner") {
+        else if (cardInstance.zone === "partner") {
             card_actions = ["덱","엔트", "대기" ,"멤버", "에너", "리버" ,"리타" ,"핸드"];
         }
-        else if (card_data.zone === "re-birth") {
+        else if (cardInstance.zone === "re-birth") {
             card_actions = ["덱", "엔트", "대기" ,"멤버", "에너", "파트","리타" ,"핸드"];
         }
-        else if (card_data.zone === "retire") {
+        else if (cardInstance.zone === "retire") {
             card_actions = ["덱", "엔트", "대기" ,"멤버", "에너", "파트", "리버" ,"핸드"];
         }
       
@@ -413,12 +417,12 @@ img {
 </style>
 
 <div class="card 
-    {card_data.state.is_selected ? 'selected' : ''}
-    {card_data.state.is_animating ? 'deck-fade-out' : ''}
-    {card_data.state.is_fading_in ? 'hand-fade-in' : 'hand-position'}
-    {card_data.state.is_tapped ? 'tapped' : ''}"
+    {cardInstance.state.is_selected ? 'selected' : ''}
+    {cardInstance.state.is_animating ? 'deck-fade-out' : ''}
+    {cardInstance.state.is_fading_in ? 'hand-fade-in' : 'hand-position'}
+    {cardInstance.state.is_tapped ? 'tapped' : ''}"
     class:expanded={isExpanded} 
-    class:flipped={card_data.state.is_flipped} 
+    class:flipped={cardInstance.state.is_flipped} 
     on:click={isClicked}
     on:contextmenu={handleRightClick}
     on:mousedown={handleMouseDown}  
@@ -427,14 +431,14 @@ img {
     aria-hidden="true">
     
     <div>
-        {#if card_data.state.is_flipped}
+        {#if cardInstance.state.is_flipped}
             <img src="/rebirthBack.png" alt="card back" />
         {:else}
-            <img src={card_data.image_url} alt={card_data.serial_number} />
+            <img src={cardDefinition?.image_url} alt={cardInstance.serial_number} />
         {/if}
     </div>
 
-    {#if card_data.state.is_selected && !isExpanded}
+    {#if cardInstance.state.is_selected && !isExpanded}
         <div class="action-menu">
             {#each card_actions as action, i}
                 <button class="action-menu-btn" 
